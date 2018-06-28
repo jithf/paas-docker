@@ -4,18 +4,25 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
+import jit.edu.paas.domain.entity.SysLogin;
 import jit.edu.paas.domain.enums.ResultEnum;
 import jit.edu.paas.domain.vo.ResultVo;
+import jit.edu.paas.domain.vo.UserVO;
+import jit.edu.paas.service.JwtService;
 import jit.edu.paas.service.SysLoginService;
 import jit.edu.paas.util.ResultVoUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import springfox.documentation.annotations.ApiIgnore;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Date;
+
+import static java.lang.Thread.sleep;
 
 /**
  * 鉴权Controller
@@ -27,6 +34,8 @@ import javax.servlet.http.HttpServletRequest;
 public class AuthController {
     @Autowired
     private SysLoginService loginService;
+    @Autowired
+    private JwtService jwtService;
 
 //    @GetMapping("/api/test")
 //    public Object hellWorld(@RequestAttribute(value = "uid")  String uid) {
@@ -122,7 +131,7 @@ public class AuthController {
 
     /**
      * 用户注册
-     * @author jitwxs
+     * @author hf
      * @since 2018/6/28 9:17
      */
     @PostMapping("/auth/register")
@@ -133,7 +142,42 @@ public class AuthController {
             @ApiImplicitParam(name = "email", value = "邮箱", required = true, dataType = "String")
     })
     public ResultVo register(String username, String password, String email) {
-
-        return ResultVoUtils.success();
+        if(loginService.getByUsername(username)==null && loginService.getByEmail(email)==null) {
+            SysLogin sysLogin = new SysLogin(username,password,email);
+            sysLogin.setCreateDate(new Date());
+            sysLogin.setHasFreeze(false);
+            loginService.save(sysLogin);
+            loginService.sendEmail(email,jwtService.genToken(username));
+            return ResultVoUtils.success("已经发送验证邮件");
+        }
+        return ResultVoUtils.error(ResultEnum.REGISTER_ERROR);
+    }
+    /**
+     * 邮件验证
+     * @author hf
+     * @since 2018/6/28 9:17
+     */
+    @GetMapping("/auth/email")
+    @ApiOperation("邮件验证")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "token", value = "token", required = true, dataType = "String")
+    })
+    public ResultVo email(String token) {
+        token = "Bearer "+token;
+        UserVO userVO = jwtService.getUserInfo(token);
+        SysLogin sysLogin = loginService.getByUsername(userVO.getUsername());
+        Date date = new Date();
+        if (sysLogin != null && !sysLogin.getHasFreeze()) {
+            if (loginService.cmpTime(sysLogin)) {
+                sysLogin.setHasFreeze(true);
+                loginService.update(sysLogin);
+            } else {
+                loginService.deleteByUsername(sysLogin.getUsername());  //如果已过期，则删除用户信息
+                return ResultVoUtils.error(ResultEnum.EMAIL_ERROR);
+            }
+        } else {
+            return ResultVoUtils.error(ResultEnum.EMAIL_ERROR);
+        }
+        return ResultVoUtils.success("邮件验证通过，用户已成功注册");
     }
 }

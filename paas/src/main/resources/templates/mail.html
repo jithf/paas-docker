@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml" xmlns:http="http://www.w3.org/1999/xhtml"
+      xmlns:https="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>mail</title>
+</head>
+<body>
+    <h3>你好，欢迎注册无道PAAS平台</h3>
+    <a href="#" th:href="@{http://127.0.0.1:8080/auth/email?token={registerUrl}(registerUrl=${registerUrl})}">请点击此处激活账号</a>
+</body>
+</html>
