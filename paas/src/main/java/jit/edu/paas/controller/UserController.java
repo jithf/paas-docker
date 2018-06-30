@@ -2,19 +2,27 @@ package jit.edu.paas.controller;
 
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.plugins.Page;
-import io.swagger.annotations.Api;
 import jit.edu.paas.commons.util.ResultVoUtils;
+import jit.edu.paas.commons.util.SpringBeanFactoryUtils;
 import jit.edu.paas.component.WrapperComponent;
 import jit.edu.paas.domain.entity.SysLogin;
 import jit.edu.paas.domain.entity.UserProject;
+import jit.edu.paas.domain.enums.LogTypeEnum;
 import jit.edu.paas.domain.select.UserSelect;
 import jit.edu.paas.domain.vo.ResultVo;
+import jit.edu.paas.service.SysLogService;
 import jit.edu.paas.service.SysLoginService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
+
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import javax.servlet.http.HttpServletRequest;
+
 
 /**
  * 用户Controller
@@ -23,7 +31,6 @@ import java.util.Date;
  */
 @RestController
 @RequestMapping("/user")
-@Api(tags={"用户Controller"})
 public class UserController {
 
     @Autowired
@@ -32,7 +39,7 @@ public class UserController {
     private SysLoginService loginService;
 
     /**
-     * @return
+     *
      * @Auther: zj
      * @Date: 2018/6/30 9:00
      * @Description:获取用户个人项目列表
@@ -59,13 +66,17 @@ public class UserController {
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResultVo modifySelfInfo(@RequestAttribute String uid,
                                    @RequestParam("username") String username,
-                                   @RequestParam("email") String email) {
+                                   @RequestParam("email") String email, HttpServletRequest request) {
         SysLogin sysLogin = loginService.getById( uid );
         sysLogin.setUsername( username );
         sysLogin.setEmail(email);
         sysLogin.setUpdateDate( new Date() );
         loginService.update( sysLogin );
         loginService.cleanLoginCache( sysLogin );
+
+        // 写入日志
+        SysLogService logService = SpringBeanFactoryUtils.getBean(SysLogService.class);
+        logService.saveLog(request, LogTypeEnum.MODIFY_SELF_INFO.getCode());
         return ResultVoUtils.success(sysLogin);
     }
 
