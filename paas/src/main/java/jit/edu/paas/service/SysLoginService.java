@@ -3,6 +3,8 @@ package jit.edu.paas.service;
 import com.baomidou.mybatisplus.service.IService;
 import jit.edu.paas.domain.entity.SysLogin;
 
+import java.util.List;
+
 /**
  * <p>
  * 登陆表 服务类
@@ -84,4 +86,11 @@ public interface SysLoginService extends IService<SysLogin> {
      * @since 2018/6/29 16:26
      */
     void cleanLoginCache(SysLogin login);
+
+//    /**
+//     * 获取所有用户
+//     * @author zj
+//     * @since 2018/6/29 16:26
+//     */
+////    List<SysLogin> getAll();
 }

@@ -367,4 +367,9 @@ public class SysLoginServiceImpl extends ServiceImpl<SysLoginMapper, SysLogin> i
             log.error("缓存删除异常，错误位置：SysLoginServiceImpl.cleanLoginCache()");
         }
     }
+
+//    @Override
+//    public List<SysLogin> getAll() {
+//        return loginMapper.selectList( new EntityWrapper<SysLogin>() );
+//    }
 }
