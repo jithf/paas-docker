@@ -2,49 +2,50 @@ package jit.edu.paas.service.impl;
 
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.plugins.Page;
-import com.google.common.collect.ImmutableList;
+import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
-import com.spotify.docker.client.messages.*;
+import com.spotify.docker.client.messages.ContainerConfig;
+import com.spotify.docker.client.messages.ContainerCreation;
+import com.spotify.docker.client.messages.HostConfig;
+import com.spotify.docker.client.messages.PortBinding;
 import jit.edu.paas.commons.util.CollectionUtils;
-import jit.edu.paas.domain.entity.SysImage;
+import jit.edu.paas.commons.util.SpringBeanFactoryUtils;
 import jit.edu.paas.domain.entity.UserContainer;
-import jit.edu.paas.mapper.SysLoginMapper;
 import jit.edu.paas.mapper.UserContainerMapper;
-import jit.edu.paas.service.UserContainerService;
-import com.baomidou.mybatisplus.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.stereotype.Service;
+import org.springframework.test.context.junit4.SpringRunner;
 
+import java.net.URI;
 import java.util.*;
 
-/**
- * <p>
- * 用户容器表 服务实现类
- * </p>
- *
- * @author jitwxs
- * @since 2018-06-27
- */
-@Service
+import static org.junit.Assert.*;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest
 @Slf4j
-public class UserContainerServiceImpl extends ServiceImpl<UserContainerMapper, UserContainer> implements UserContainerService {
+public class UserContainerServiceImplTest {
     @Autowired
     private DockerClient dockerClient;
     @Autowired
     private UserContainerMapper userContainerMapper;
 
-    @Override
-    public Page<UserContainer> getContainerListByUser(String userid, Page<UserContainer> page) {
-        Page<UserContainer> userContainer = new Page<>();
-        List<UserContainer> userlist= userContainerMapper.listContainerById(userid);
-        return page.setRecords(userlist);
-    }
 
-    @Override
-    public void createContainer(String imagename, String[] cmd, String[] ports, String containerName, String projectId) {
+    @Test
+    public void createContainerTest() {
+//        UserContainerMapper userContainerMapper = SpringBeanFactoryUtils.getBean(UserContainerMapper.class);
+
+//        DockerClient dockerClient = DefaultDockerClient.builder()
+//                .uri(URI.create("http://192.168.91.129:2375"))
+//                .build();
+
+        String[] cmd = {"sh", "-c", "while :; do sleep 1; done"};
+        String[] ports = {"80","23"};
         final UserContainer uc = new UserContainer();
         Map<String, List<PortBinding>> portBindings = new HashMap<>();
         for (String port : ports) {
@@ -60,33 +61,32 @@ public class UserContainerServiceImpl extends ServiceImpl<UserContainerMapper, U
 
         ContainerConfig containerConfig = ContainerConfig.builder()
                 .hostConfig(hostConfig)
-                .image(imagename).exposedPorts(ports)
+                .image("centos:7").exposedPorts(ports)
                 .cmd(cmd)
                 .build();
         try {
             ContainerCreation creation = dockerClient.createContainer(containerConfig);
             uc.setId(creation.id());
-            uc.setName(containerName);
+            uc.setName("syacontainer");
             uc.setCommand(cmd.toString());
-            uc.setProjectId(projectId);
+            uc.setProjectId("1234");
             uc.setCreateDate(new Date());
             uc.setPort(ports.toString());
             uc.setStatus("0");
+            System.out.print(uc);
             userContainerMapper.insert(uc);
         } catch (DockerException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
             e.printStackTrace();
-            log.error("创建失败，检查参数是否正确");
         }
-
     }
 
-    @Override
-    public void startContainer(String containerid) throws DockerException, InterruptedException {
+    @Test
+    public void startContainer() {
         try {
-            dockerClient.startContainer(containerid);
-            List<UserContainer> list = userContainerMapper.selectList(new EntityWrapper<UserContainer>().eq("id",containerid));
+            dockerClient.startContainer("b44c0b7f849a237b0f825230aacaed9be347e904d299ad1753dc2a712c9da227");
+            List<UserContainer> list = userContainerMapper.selectList(new EntityWrapper<UserContainer>().eq("id","091639278b14be95c81680d9a4361e1fcbded3af1c83fb5f29e4a0056d2cea44"));
             UserContainer uc = CollectionUtils.getFirst(list);
             uc.setStatus("1");
             userContainerMapper.updateById(uc);
@@ -98,11 +98,20 @@ public class UserContainerServiceImpl extends ServiceImpl<UserContainerMapper, U
         }
     }
 
-    @Override
-    public void stopContainer(String containerid) {
+    @Test
+    public void getContainerListByUser() {
+        Page<UserContainer> page = new Page<>();
+        Page<UserContainer> userContainer = new Page<>();
+        List<UserContainer> userlist= userContainerMapper.listContainerById("4151361367131");
+        System.out.println("..."+userlist);
+        System.out.println("..."+page.setRecords(userlist));
+    }
+
+    @Test
+    public void stopContainer() {
         try {
-            dockerClient.stopContainer(containerid,5);
-            List<UserContainer> list = userContainerMapper.selectList(new EntityWrapper<UserContainer>().eq("id",containerid));
+            dockerClient.stopContainer("9bdfd7e51f22d20080498750629329f98d64b6e461f55a7d27aa9fe855c53689",5);
+            List<UserContainer> list = userContainerMapper.selectList(new EntityWrapper<UserContainer>().eq("id","9bdfd7e51f22d20080498750629329f98d64b6e461f55a7d27aa9fe855c53689"));
             UserContainer uc = CollectionUtils.getFirst(list);
             uc.setStatus("0");
             userContainerMapper.updateById(uc);
@@ -114,11 +123,11 @@ public class UserContainerServiceImpl extends ServiceImpl<UserContainerMapper, U
         }
     }
 
-    @Override
-    public void killContainer(String containerid) {
+    @Test
+    public void killContainer() {
         try {
-            dockerClient.killContainer(containerid);
-            List<UserContainer> list = userContainerMapper.selectList(new EntityWrapper<UserContainer>().eq("id",containerid));
+            dockerClient.killContainer("091639278b14be95c81680d9a4361e1fcbded3af1c83fb5f29e4a0056d2cea44");
+            List<UserContainer> list = userContainerMapper.selectList(new EntityWrapper<UserContainer>().eq("id","091639278b14be95c81680d9a4361e1fcbded3af1c83fb5f29e4a0056d2cea44"));
             UserContainer uc = CollectionUtils.getFirst(list);
             uc.setStatus("0");
             userContainerMapper.updateById(uc);
@@ -130,11 +139,11 @@ public class UserContainerServiceImpl extends ServiceImpl<UserContainerMapper, U
         }
     }
 
-    @Override
-    public void removeContainer(String containerid) {
+    @Test
+    public void removeContainer() {
         try {
-            dockerClient.removeContainer(containerid);
-            userContainerMapper.deleteById(containerid);
+            dockerClient.removeContainer("979dba5a47ca19c95f6a6ea5defc019257e3d093684d9f6801d51d9780ca4cd4");
+            userContainerMapper.deleteById("979dba5a47ca19c95f6a6ea5defc019257e3d093684d9f6801d51d9780ca4cd4");
         } catch (DockerException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -143,11 +152,11 @@ public class UserContainerServiceImpl extends ServiceImpl<UserContainerMapper, U
         }
     }
 
-    @Override
-    public void pauseContainer(String containerid) {
+    @Test
+    public void pauseContainer() {
         try {
-            dockerClient.pauseContainer(containerid);
-            List<UserContainer> list = userContainerMapper.selectList(new EntityWrapper<UserContainer>().eq("id",containerid));
+            dockerClient.pauseContainer("091639278b14be95c81680d9a4361e1fcbded3af1c83fb5f29e4a0056d2cea44");
+            List<UserContainer> list = userContainerMapper.selectList(new EntityWrapper<UserContainer>().eq("id","091639278b14be95c81680d9a4361e1fcbded3af1c83fb5f29e4a0056d2cea44"));
             UserContainer uc = CollectionUtils.getFirst(list);
             uc.setStatus("2");
             userContainerMapper.updateById(uc);
@@ -159,11 +168,11 @@ public class UserContainerServiceImpl extends ServiceImpl<UserContainerMapper, U
         }
     }
 
-    @Override
-    public void unpauseContainer(String containerid) {
+    @Test
+    public void unpauseContainer() {
         try {
-            dockerClient.unpauseContainer(containerid);
-            List<UserContainer> list = userContainerMapper.selectList(new EntityWrapper<UserContainer>().eq("id",containerid));
+            dockerClient.unpauseContainer("091639278b14be95c81680d9a4361e1fcbded3af1c83fb5f29e4a0056d2cea44");
+            List<UserContainer> list = userContainerMapper.selectList(new EntityWrapper<UserContainer>().eq("id","091639278b14be95c81680d9a4361e1fcbded3af1c83fb5f29e4a0056d2cea44"));
             UserContainer uc = CollectionUtils.getFirst(list);
             uc.setStatus("1");
             userContainerMapper.updateById(uc);
@@ -175,18 +184,16 @@ public class UserContainerServiceImpl extends ServiceImpl<UserContainerMapper, U
         }
     }
 
-
-
-    @Override
-    public TopResults getTopResult(String containerid) {
+    @Test
+    public void getTopResult() {
         try {
-            return dockerClient.topContainer(containerid);
+            System.out.println("..."+dockerClient.topContainer("a6c963cab58f4d795dfbe93f6f587c7c58bb258e1fac8bbc1d69c1f80268abc2","-aux"));
         } catch (DockerException e) {
             e.printStackTrace();
+            log.error("运行失败，容器未在运行");
         } catch (InterruptedException e) {
             e.printStackTrace();
             log.error("运行失败，检查参数是否正确");
         }
-        return null;
     }
 }

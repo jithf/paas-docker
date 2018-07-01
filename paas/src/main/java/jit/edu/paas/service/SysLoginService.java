@@ -84,4 +84,9 @@ public interface SysLoginService extends IService<SysLogin> {
      * @since 2018/6/29 16:26
      */
     void cleanLoginCache(SysLogin login);
+
+    /**
+     * 更新用户信息
+     * @author sya
+     */
 }

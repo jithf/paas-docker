@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.NotNull;
 
 /**
@@ -50,4 +51,16 @@ public class ImageController {
 
         return ResultVoUtils.success(images);
     }
+
+    /**上传镜像
+     * @author sya
+     *
+     */
+    @PostMapping("/imageupload")
+    public ResultVo imageUpLoad(HttpServletRequest hs){
+        String message = imageService.uploadImages(hs);
+        return ResultVoUtils.success();
+    }
+
+
 }
