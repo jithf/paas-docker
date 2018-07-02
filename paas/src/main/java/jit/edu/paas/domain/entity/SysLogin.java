@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotations.TableId;
 import com.baomidou.mybatisplus.enums.IdType;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -18,6 +19,7 @@ import java.util.Date;
  * @since 2018-06-27
  */
 @Data
+@NoArgsConstructor
 public class SysLogin implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -56,13 +58,6 @@ public class SysLogin implements Serializable {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date updateDate;
 
-    public SysLogin() {}
-
-    public SysLogin(String username,String password,String email) {
-        this.username=username;
-        this.password=password;
-        this.email=email;
-    }
 
     public String getId() {
         return id;
@@ -126,5 +121,10 @@ public class SysLogin implements Serializable {
 
     public void setUpdateDate(Date updateDate) {
         this.updateDate = updateDate;
+    }
+    public SysLogin(String username, String password, String email) {
+        this.username = username;
+        this.password = password;
+        this.email = email;
     }
 }

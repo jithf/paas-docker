@@ -1,7 +1,7 @@
 package jit.edu.paas.service;
 
-import jit.edu.paas.domain.entity.SysLogin;
 import com.baomidou.mybatisplus.service.IService;
+import jit.edu.paas.domain.entity.SysLogin;
 
 /**
  * <p>
@@ -13,11 +13,25 @@ import com.baomidou.mybatisplus.service.IService;
  */
 public interface SysLoginService extends IService<SysLogin> {
     /**
+     * 根据ID获取用户
+     * @author jitwxs
+     * @since 2018/6/29 16:59
+     */
+    SysLogin getById(String id);
+
+    /**
      * 根据用户名获取用户
      * @author jitwxs
      * @since 2018/6/27 14:33
      */
     SysLogin getByUsername(String username);
+
+    /**
+     * 根据邮件获取用户
+     * @author hf
+     * @since 2018/6/27 14:33
+     */
+    SysLogin getByEmail(String email);
 
     /**
      * 获取权限Id
@@ -33,7 +47,6 @@ public interface SysLoginService extends IService<SysLogin> {
      * @author hf
      * @since 2018/6/27 14:33
      */
-    int save(SysLogin sysLogin);
 
     /**
      * 更新数据库用户信息
@@ -42,30 +55,4 @@ public interface SysLoginService extends IService<SysLogin> {
      */
     int update (SysLogin sysLogin);
 
-    /**
-     * 根据邮件获取用户
-     * @author hf
-     * @since 2018/6/27 14:33
-     */
-    SysLogin getByEmail(String email);
-
-    /**
-     * 发送邮件验证注册
-     * @author hf
-     * @since 2018/6/27 14:33
-     */
-    void sendEmail(String email,String token);
-
-    /**
-     * 判断时间是否过期
-     * @author hf
-     * @since 2018/6/27 14:33
-     */
-    boolean cmpTime(SysLogin sysLogin);
-
-    /**
-     * 删除用户信息
-     * @since 2018/6/27 14:33
-     */
-     void deleteByUsername(String username);
 }
