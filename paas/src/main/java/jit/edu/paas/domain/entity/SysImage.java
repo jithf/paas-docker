@@ -25,7 +25,7 @@ public class SysImage implements Serializable {
     /**
      * 镜像ID
      */
-    @TableId(type = IdType.INPUT)
+    @TableId(type = IdType.UUID)
     private String id;
     /**
      * 镜像名
@@ -40,7 +40,7 @@ public class SysImage implements Serializable {
      */
     private String size;
     /**
-     * 镜像类型【1：本地公共镜像；2：本地用户镜像】
+     * 镜像类型【1：本地公共镜像；2：本地用户镜像; 3: dockerHub镜像；】
      */
     private Integer type;
     /**
@@ -62,4 +62,24 @@ public class SysImage implements Serializable {
     @TableField(update = "now()")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date updateDate;
+    /**
+     * virtual_size
+     */
+    private String virtualSize;
+    /**
+     * parent_id
+     */
+    private String parentId;
+    /**
+     * labels
+     */
+    private String labels;
+    /**
+     * image_id
+     */
+    private String imageId;
+    /**
+     * cmd
+     */
+    private String cmd;
 }
