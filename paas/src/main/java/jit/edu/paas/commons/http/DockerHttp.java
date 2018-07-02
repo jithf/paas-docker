@@ -29,4 +29,9 @@ public class DockerHttp {
         return list;
     }
     /*  Image  Start */
+
+    public static void createcontainer(){
+        String url = serverUrl + "/containers/create";
+        String parms = "Domainname=mycentos" + "&image=centos:7";
+    }
 }
