@@ -4,13 +4,18 @@ import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.plugins.Page;
 import jit.edu.paas.commons.StringUtils;
 import jit.edu.paas.commons.util.ResultVoUtils;
+import jit.edu.paas.commons.util.SpringBeanFactoryUtils;
 import jit.edu.paas.domain.entity.SysRepository;
+import jit.edu.paas.domain.enums.LogTypeEnum;
 import jit.edu.paas.domain.enums.ResultEnum;
 import jit.edu.paas.domain.vo.ResultVo;
+import jit.edu.paas.service.SysLogService;
 import jit.edu.paas.service.SysRepositoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * 仓储Controller
@@ -47,10 +52,14 @@ public class RepositoryController {
      */
     @PostMapping("/create")
     @PreAuthorize("hasRole('ROLE_SYSTEM')")
-    public ResultVo createRepository(String address, Integer type) {
+    public ResultVo createRepository(String address, Integer type, HttpServletRequest request) {
         if(StringUtils.isBlank(address) || type == null) {
             return ResultVoUtils.error(ResultEnum.PARAM_ERROR);
         }
+        // 写入日志
+        SysLogService logService = SpringBeanFactoryUtils.getBean(SysLogService.class);
+        logService.saveLog(request, LogTypeEnum.CREATE_REPOSITORY.getCode());
+
        return repositoryService.createRepository(address, type);
     }
 
@@ -61,7 +70,11 @@ public class RepositoryController {
      */
     @DeleteMapping("/delete/{id}")
     @PreAuthorize("hasRole('ROLE_SYSTEM')")
-    public ResultVo deleteRepository(@PathVariable Integer id) {
+    public ResultVo deleteRepository(@PathVariable Integer id,HttpServletRequest request) {
+
+        // 写入日志
+        SysLogService logService = SpringBeanFactoryUtils.getBean(SysLogService.class);
+        logService.saveLog(request, LogTypeEnum.DELETE_REPOSITORY.getCode());
         return repositoryService.deleteRepository(id);
     }
 }
