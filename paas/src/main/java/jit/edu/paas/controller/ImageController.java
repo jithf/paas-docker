@@ -5,18 +5,15 @@ import com.baomidou.mybatisplus.plugins.Page;
 import com.spotify.docker.client.messages.ImageHistory;
 import com.spotify.docker.client.messages.ImageInfo;
 import com.spotify.docker.client.messages.ImageSearchResult;
-import io.swagger.annotations.Api;
 import jit.edu.paas.commons.util.CollectionUtils;
 import jit.edu.paas.commons.util.ResultVoUtils;
 import jit.edu.paas.component.WrapperComponent;
 import jit.edu.paas.domain.entity.SysImage;
-import jit.edu.paas.domain.entity.UserProject;
 import jit.edu.paas.domain.enums.ImageTypeEnum;
 import jit.edu.paas.domain.enums.ResultEnum;
 import jit.edu.paas.domain.select.SysImageSelect;
 import jit.edu.paas.domain.vo.ResultVo;
 import jit.edu.paas.service.SysImageService;
-import org.apache.http.HttpRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -27,12 +24,12 @@ import java.util.List;
 
 /**
  * 镜像Controller
+ *
  * @author jitwxs
  * @since 2018/6/28 14:27
  */
 @RestController
 @RequestMapping("/image")
-@Api(tags={"镜像Controller"})
 public class ImageController {
     @Autowired
     private SysImageService imageService;
@@ -41,6 +38,7 @@ public class ImageController {
 
     /**
      * 获取镜像列表
+     *
      * @author jitwxs
      * @since 2018/6/28 14:43
      */
@@ -120,7 +118,7 @@ public class ImageController {
             System.out.println(list.size());
             return ResultVoUtils.error(ResultEnum.PARAM_ERROR); //查询结果不唯一，参数错误
         }
-        SysImage first = CollectionUtils.getFirst(list);
+        SysImage first = CollectionUtils.getListFirst(list);
         // 3、查询详细信息
         ImageInfo imageInfo = imageService.inspectImage(first.getName());
         // 4、返回前台
@@ -144,7 +142,7 @@ public class ImageController {
         if(list.size()!=1) {
             return ResultVoUtils.error(ResultEnum.PARAM_ERROR); //查询结果不唯一，参数错误
         }
-        SysImage first = CollectionUtils.getFirst(list);
+        SysImage first = CollectionUtils.getListFirst(list);
         // 4、删除镜像
         String b=imageService.removeImage(first);
         // 5、返回前台
@@ -263,5 +261,4 @@ public class ImageController {
         }
         return  ResultVoUtils.error(ResultEnum.IMPORT_ERROR);
     }
-
 }

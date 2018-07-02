@@ -1,5 +1,6 @@
 package jit.edu.paas;
 
+<<<<<<< HEAD
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
@@ -12,13 +13,15 @@ import jit.edu.paas.domain.entity.SysLogin;
 import jit.edu.paas.service.SysImageService;
 import jit.edu.paas.service.SysLoginService;
 import org.junit.Test;
+=======
+>>>>>>> master
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import com.spotify.docker.client.messages.*;
 import sun.net.www.http.HttpClient;
 
+<<<<<<< HEAD
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -111,5 +114,10 @@ public class ApplicationTests {
         System.out.println(sysImageService.inspectImage("centos:5").containerConfig().cmd());
 
 }
+=======
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class ApplicationTests {
+>>>>>>> master
 
 }

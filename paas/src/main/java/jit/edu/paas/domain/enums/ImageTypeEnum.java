@@ -3,7 +3,7 @@ package jit.edu.paas.domain.enums;
 import lombok.Getter;
 
 /**
- * 镜像类型举
+ * 镜像类型枚举
  * @author jitwxs
  * @since 2018/6/5 23:53
  */

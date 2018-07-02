@@ -10,6 +10,9 @@ import jit.edu.paas.domain.select.SysImageSelect;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import com.google.common.collect.ImmutableSet;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 /**
  * <p>
@@ -100,13 +103,6 @@ public interface SysImageService extends IService<SysImage> {
     List<ImageHistory> imageFile(String imageName);
 
     /**
-     * 文件上传
-     * @author sya
-     * @since 6.30
-     */
-    String uploadImages(HttpServletRequest request);
-
-    /**
      *  导入镜像
      * @author hf
      * @since 2018/7/2 8:15
@@ -126,4 +122,17 @@ public interface SysImageService extends IService<SysImage> {
      * @since 2018/7/2 8:15
      */
     String buildImage(String imageName,String file);
+
+    /**
+     * 为用户导入本地的镜像
+     * @author sya
+     */
+    String uploadImages(@RequestParam HttpServletRequest req);
+
+    /**
+     * 获取一个镜像的所有暴露接口
+     * @author jitwxs
+     * @since 2018/7/2 8:42
+     */
+    ImmutableSet<String> listExportPorts(String imageName);
 }

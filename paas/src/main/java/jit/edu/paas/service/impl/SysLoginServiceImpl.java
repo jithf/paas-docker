@@ -2,14 +2,13 @@ package jit.edu.paas.service.impl;
 
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.service.impl.ServiceImpl;
-import jit.edu.paas.commons.StringUtils;
+import jit.edu.paas.commons.util.*;
 import jit.edu.paas.commons.activemq.MQProducer;
 import jit.edu.paas.commons.activemq.Task;
-import jit.edu.paas.commons.util.CollectionUtils;
-import jit.edu.paas.commons.util.JsonUtils;
-import jit.edu.paas.commons.util.JwtUtils;
 import jit.edu.paas.commons.util.jedis.JedisClient;
 import jit.edu.paas.domain.entity.SysLogin;
+import jit.edu.paas.domain.enums.ResultEnum;
+import jit.edu.paas.domain.vo.ResultVo;
 import jit.edu.paas.mapper.SysLoginMapper;
 import jit.edu.paas.service.SysLoginService;
 import jit.edu.paas.service.SysRoleService;
@@ -21,13 +20,6 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-<<<<<<< HEAD
-import org.thymeleaf.TemplateEngine;
-import org.thymeleaf.context.Context;
-import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
-import java.util.Calendar;
-=======
 import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
@@ -35,9 +27,7 @@ import org.thymeleaf.context.Context;
 import javax.jms.Destination;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
-import java.util.Date;
 import java.util.HashMap;
->>>>>>> master
 import java.util.List;
 import java.util.Map;
 
@@ -63,13 +53,7 @@ public class SysLoginServiceImpl extends ServiceImpl<SysLoginMapper, SysLogin> i
     @Autowired
     private JedisClient jedisClient;
     @Autowired
-<<<<<<< HEAD
-    private JavaMailSender mailSender;
-    @Autowired
-    private TemplateEngine templateEngine;
-=======
     private MQProducer mqProducer;
->>>>>>> master
 
     @Value("${redis.login.key}")
     private String key;
@@ -91,7 +75,7 @@ public class SysLoginServiceImpl extends ServiceImpl<SysLoginMapper, SysLogin> i
         try {
             String res = jedisClient.hget(key, field);
             if (StringUtils.isNotBlank(res)) {
-                return JsonUtils.jsonToPojo(res, SysLogin.class);
+                return JsonUtils.jsonToObject(res, SysLogin.class);
             }
         } catch (Exception e) {
             log.error("缓存读取异常，错误位置：SysLoginServiceImpl.getById()");
@@ -128,15 +112,14 @@ public class SysLoginServiceImpl extends ServiceImpl<SysLoginMapper, SysLogin> i
         try {
             String res = jedisClient.hget(key, field);
             if (StringUtils.isNotBlank(res)) {
-                return JsonUtils.jsonToPojo(res, SysLogin.class);
+                return JsonUtils.jsonToObject(res, SysLogin.class);
             }
         } catch (Exception e) {
             log.error("缓存读取异常，错误位置：SysLoginServiceImpl.getByUsername()");
         }
 
         List<SysLogin> list = loginMapper.selectList(new EntityWrapper<SysLogin>().eq("username", username));
-        SysLogin first = CollectionUtils.getFirst(list);
-
+        SysLogin first = CollectionUtils.getListFirst(list);
 
         // 如果用户不存在，跳过缓存
         if (first == null) {
@@ -168,14 +151,14 @@ public class SysLoginServiceImpl extends ServiceImpl<SysLoginMapper, SysLogin> i
         try {
             String res = jedisClient.hget(key, field);
             if (StringUtils.isNotBlank(res)) {
-                return JsonUtils.jsonToPojo(res, SysLogin.class);
+                return JsonUtils.jsonToObject(res, SysLogin.class);
             }
         } catch (Exception e) {
             log.error("缓存读取异常，错误位置：SysLoginServiceImpl.getByEmail()");
         }
 
         List<SysLogin> list = loginMapper.selectList(new EntityWrapper<SysLogin>().eq("email", email));
-        SysLogin first = CollectionUtils.getFirst(list);
+        SysLogin first = CollectionUtils.getListFirst(list);
 
         // 如果用户不存在，跳过缓存
         if (first == null) {
@@ -189,23 +172,6 @@ public class SysLoginServiceImpl extends ServiceImpl<SysLoginMapper, SysLogin> i
         }
 
         return first;
-    }
-
-    /**
-     * 获取角色ID
-     *
-     * @author jitwxs
-     * @since 2018/6/29 15:38
-     */
-    @Override
-    public Integer getRoleId(String username) {
-        SysLogin login = getByUsername(username);
-
-        if (login == null) {
-            return null;
-        }
-
-        return login.getRoleId();
     }
 
     /**
@@ -229,8 +195,6 @@ public class SysLoginServiceImpl extends ServiceImpl<SysLoginMapper, SysLogin> i
         if(StringUtils.isNotBlank(sysLogin.getPassword())) {
             sysLogin.setPassword(new BCryptPasswordEncoder().encode(sysLogin.getPassword()));
         }
-        // 设置注册时间
-        sysLogin.setCreateDate(new Date());
         // 用户角色默认为User
         sysLogin.setRoleId(roleService.getId("ROLE_USER"));
         Integer i = loginMapper.insert(sysLogin);
@@ -239,70 +203,6 @@ public class SysLoginServiceImpl extends ServiceImpl<SysLoginMapper, SysLogin> i
 
     @Override
     public int update(SysLogin sysLogin) {
-        return loginMapper.updateById(sysLogin);
-    }
-
-    @Override
-    public SysLogin getByEmail(String email) {
-        List<SysLogin> list = loginMapper.selectList(new EntityWrapper<SysLogin>().eq("email", email));
-        SysLogin first = CollectionUtils.getFirst(list);
-        return first;
-    }
-
-    @Override
-    public void sendEmail(String email,String token) {
-        MimeMessage mimeMailMessage = mailSender.createMimeMessage();
-        MimeMessageHelper helper = null;
-        try {
-            helper = new MimeMessageHelper(mimeMailMessage,true);
-            helper.setFrom("13260900973@163.com");
-            helper.setTo(email);
-            helper.setSubject("template");
-
-            Context context = new Context();
-            context.setVariable("registerUrl", token.substring(7));
-            String emailContent = templateEngine.process("mail", context);
-            helper.setText(emailContent,true);
-
-            mailSender.send(mimeMailMessage);
-        } catch (MessagingException e) {
-            log.error("发送邮件异常，错误位置：SysLoginServiceImpl.sendEmail()");
-        }
-    }
-
-    @Override
-    public boolean cmpTime(SysLogin sysLogin) {
-        long tempTime = sysLogin.getCreateDate().getTime();
-
-        Calendar calendar = Calendar.getInstance();
-        Long date = calendar.getTime().getTime();            //获取毫秒时间
-
-        if(date - tempTime > 600000 ) {   //10分钟
-            return false;
-        } else {
-            return true;
-        }
-    }
-
-    @Override
-    public void deleteByUsername(String username) {
-        try {
-            String res = jedisClient.hget(key, username);
-            if(StringUtils.isNotBlank(res)) {
-                try {
-                    jedisClient.srem(key, username, res);
-                } catch (Exception e) {
-                    log.error("缓存存储异常，错误位置：SysLoginServiceImpl.deleteByUsername()");
-                }
-            }
-        } catch (Exception e) {
-            log.error("缓存读取异常，错误位置：SysLoginServiceImpl.deleteByUsername()");
-        }
-
-        List<SysLogin> list = loginMapper.selectList(new EntityWrapper<SysLogin>().eq("username", username));
-        SysLogin first = CollectionUtils.getFirst(list);
-        if(first != null) {
-            loginMapper.delete(new EntityWrapper<SysLogin>().eq("username", username));
         int i = loginMapper.updateById(sysLogin);
         cleanLoginCache(sysLogin);
         return i;
@@ -415,7 +315,7 @@ public class SysLoginServiceImpl extends ServiceImpl<SysLoginMapper, SysLogin> i
     @Override
     public void deleteByUsername(String username) {
         List<SysLogin> list = loginMapper.selectList(new EntityWrapper<SysLogin>().eq("username", username));
-        SysLogin first = CollectionUtils.getFirst(list);
+        SysLogin first = CollectionUtils.getListFirst(list);
         if (first != null) {
             loginMapper.delete(new EntityWrapper<SysLogin>().eq("username", username));
             // 清理缓存
@@ -444,7 +344,52 @@ public class SysLoginServiceImpl extends ServiceImpl<SysLoginMapper, SysLogin> i
             }
         } catch (Exception e) {
             log.error("缓存删除异常，错误位置：SysLoginServiceImpl.cleanLoginCache()");
->>>>>>> master
         }
+    }
+
+    @Override
+    public boolean hasFreeze(String username) {
+        SysLogin login = getByUsername(username);
+
+        if(login != null) {
+            return login.getHasFreeze();
+        }
+        return false;
+    }
+
+    @Override
+    public int freezeUser(String[] ids) {
+        int count = 0;
+        for(String id : ids) {
+            SysLogin login = getById(id);
+
+            if(login != null && !login.getHasFreeze()) {
+                login.setHasFreeze(true);
+                // 更新数据
+                update(login);
+
+                count++;
+            }
+        }
+        return count;
+    }
+
+    @Override
+    public ResultVo registerCheck(String username, String email) {
+        if(StringUtils.isBlank(username, email)) {
+            return ResultVoUtils.error(ResultEnum.PARAM_ERROR);
+        }
+        if(getByUsername(username) != null) {
+            return ResultVoUtils.error(ResultEnum.REGISTER_USERNAME_ERROR);
+        }
+        if(getByEmail(email) != null) {
+            return ResultVoUtils.error(ResultEnum.REGISTER_EMAIL_ERROR);
+        }
+        return ResultVoUtils.success();
+    }
+
+    @Override
+    public String getRoleName(String userId) {
+        return loginMapper.getRoleName(userId);
     }
 }
