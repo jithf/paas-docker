@@ -2,17 +2,11 @@ package jit.edu.paas.service;
 
 import com.baomidou.mybatisplus.plugins.Page;
 import com.baomidou.mybatisplus.service.IService;
-import com.spotify.docker.client.messages.ImageHistory;
-import com.spotify.docker.client.messages.ImageInfo;
-import com.spotify.docker.client.messages.ImageSearchResult;
+import com.google.common.collect.ImmutableSet;
 import jit.edu.paas.domain.entity.SysImage;
-import jit.edu.paas.domain.select.SysImageSelect;
+import jit.edu.paas.domain.vo.ResultVo;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.List;
-import com.google.common.collect.ImmutableSet;
-import org.springframework.web.bind.annotation.RequestParam;
-
 
 /**
  * <p>
@@ -23,14 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
  * @since 2018-06-27
  */
 public interface SysImageService extends IService<SysImage> {
-
-    /**
-     * 根据镜像名查找
-     *
-     * @author hf
-     * @since 2018/7/3 8:35
-     */
-    SysImage getByImageName(String imageName);
+    SysImage getById(String id);
 
     /**
      * 获取本地公共镜像
@@ -51,70 +38,91 @@ public interface SysImageService extends IService<SysImage> {
      * @author jitwxs
      * @since 2018/6/28 16:15
      */
-    List<ImageSearchResult> listHubImage(String name, Page<SysImage> page);
+    ResultVo listHubImage(String name, Integer limit,  Page<SysImage> page);
+
+    /**
+     * 根据完整名获取镜像
+     * @author jitwxs
+     * @since 2018/7/4 11:24
+     */
+    SysImage getByFullName(String fullName);
 
     /**
      * 查询镜像详细信息
      * @author hf
      * @since 2018/6/28 16:15
      */
-    ImageInfo inspectImage(String name);
+    ResultVo inspectImage(String id, String userId);
 
     /**
-     *  删除镜像
+     * 同步本地镜像到数据库
+     * @author jitwxs
+     * @since 2018/7/3 16:38
+     */
+    ResultVo syncLocalImage();
+
+    /**
+     * 删除镜像
      * @author hf
      * @since 2018/6/28 16:15
      */
-    String removeImage(SysImage image);
+    ResultVo removeImage(String id, String userId);
 
     /**
-     *  拉取镜像
+     * 从DockerHub上拉取镜像
      * @author hf
      * @since 2018/6/28 16:15
      */
-    String pullImage(String name);
+    ResultVo pullImageFromHub(String name);
 
     /**
      *  push镜像
      * @author hf
      * @since 2018/6/28 16:15
      */
-    String pushImage(String imageName,String dockerName,String password,String uid);
-
-    /**
-     *  修改镜像
-     * @author hf
-     * @since 2018/6/28 16:15
-     */
-    String modifyImage(SysImageSelect sysImageSelect);
-
-    /**
-     *  引用并标记镜像
-     * @author hf
-     * @since 2018/6/28 16:15
-     */
-    String tagImage(String imageName,String tag,String uid);
-
-    /**
-     *  查看源码文件 dockerfile
-     * @author hf
-     * @since 2018/6/28 16:15
-     */
-    List<ImageHistory> imageFile(String imageName);
-
-    /**
-     *  导入镜像
-     * @author hf
-     * @since 2018/7/2 8:15
-     */
-    String importImage(String uid,String fileNames);
+    ResultVo pushImage(String id, String username, String password);
 
     /**
      *  导出镜像
      * @author hf
      * @since 2018/7/2 8:15
      */
-    String exportImage(String imageName);
+    ResultVo exportImage(String id, String uid);
+
+    /**
+     *  查看History
+     * @author hf
+     * @since 2018/6/28 16:15
+     */
+    ResultVo getHistory(String id, String uid);
+
+    /**
+     * 公开/关闭私有镜像
+     * 仅所有者本人操作
+     * @author jitwxs
+     * @since 2018/7/4 16:12
+     */
+    ResultVo changOpenImage(String id, String uid, boolean code);
+
+    /**
+     * 获取一个镜像的所有暴露接口
+     * @author jitwxs
+     * @since 2018/7/2 8:42
+     */
+    ImmutableSet<String> listExportPorts(String imageId);
+
+    /**
+     *  导入镜像
+     * @author hf
+     * @since 2018/7/2 8:15
+     */
+    ResultVo importImage(String uid,HttpServletRequest request);
+    /**
+     * 文件上传
+     * @author sya
+     * @since 6.30
+     */
+    String uploadImages(HttpServletRequest request);
 
     /**
      *  dockerfile建立镜像
@@ -124,15 +132,17 @@ public interface SysImageService extends IService<SysImage> {
     String buildImage(String imageName,String file);
 
     /**
-     * 为用户导入本地的镜像
-     * @author sya
+     * 清理缓存
+     * 根据ID或完整名清理
+     * @author jitwxs
+     * @since 2018/7/4 16:25
      */
-    String uploadImages(@RequestParam HttpServletRequest req);
+    void cleanCache(String id, String fullName);
 
     /**
-     * 获取一个镜像的所有暴露接口
+     * 是否有权限访问镜像
      * @author jitwxs
-     * @since 2018/7/2 8:42
+     * @since 2018/7/4 16:55
      */
-    ImmutableSet<String> listExportPorts(String imageName);
+    Boolean hasAuthImage(String userId, SysImage image);
 }

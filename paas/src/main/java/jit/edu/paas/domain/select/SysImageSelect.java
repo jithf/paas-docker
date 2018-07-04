@@ -4,10 +4,11 @@ import lombok.Data;
 
 import java.util.Date;
 
-/**镜像搜索条件
-* @author hf
-* @since 2018/6/30 10:30
-*/
+/**
+ * 镜像搜索条件
+ * @author hf
+ * @since 2018/6/30 10:30
+ */
 @Data
 public class SysImageSelect {
     /**
