@@ -179,29 +179,17 @@ public class FileUtils extends org.apache.commons.io.FileUtils {
             // 文件内容
             byte[] content = file.getBytes();
 
-<<<<<<< HEAD
-            File file1 = new File("D:\\tests\\"+fileNames);  //路径后期需修改！！！
-=======
             File file1 = new File("D:\\test\\"+fileNames);
->>>>>>> master
 
             FileUtils.writeByteArrayToFile(file1, content);
 
             FileOutputStream fos = new FileOutputStream(file1);
             fos.write(content);
             fos.flush();
-<<<<<<< HEAD
-            result = result + fileNames ;
-            System.out.println("write success");
-        }
-        return result;
-
-=======
             result = result + fileNames + ":" + content.length;
             System.out.println("write success");
         }
         return result;
->>>>>>> master
     }
 
     /**
