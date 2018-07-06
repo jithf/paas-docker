@@ -1,10 +1,12 @@
 package jit.edu.paas.commons.activemq;
 
+
+
 import jit.edu.paas.commons.util.JsonUtils;
+import jit.edu.paas.commons.util.StringUtils;
 import jit.edu.paas.domain.entity.SysLogin;
 import jit.edu.paas.service.SysLoginService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 
@@ -33,6 +35,17 @@ public class RegisterConsumer {
             if(login != null && login.getHasFreeze()) {
                 loginService.deleteById(login);
             }
+        }
+    }
+
+    @JmsListener(destination = "MQ_QUEUE_TEST")
+    public void receiveQueue2(String text) {
+        if(StringUtils.isNotBlank(text)){
+            Task task = JsonUtils.jsonToObject(text, Task.class);
+
+            Map<String, Object> map = task.getData();
+            String t = (String) map.get("msg");
+            System.out.println("####"+t+"###");
         }
     }
 }

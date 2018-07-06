@@ -5,17 +5,24 @@ import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.ProgressHandler;
 import com.spotify.docker.client.exceptions.DockerException;
+import jit.edu.paas.commons.activemq.MQProducer;
+import jit.edu.paas.commons.activemq.Task;
 import jit.edu.paas.commons.util.CollectionUtils;
 import jit.edu.paas.commons.util.HttpClientUtils;
+import jit.edu.paas.commons.util.JsonUtils;
 import jit.edu.paas.domain.entity.SysImage;
 import jit.edu.paas.domain.entity.SysLogin;
 import jit.edu.paas.service.SysImageService;
-import jit.edu.paas.service.SysLoginService;
+import org.apache.activemq.command.ActiveMQQueue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
+
+import javax.jms.Destination;
+import java.util.HashMap;
+import java.util.Map;
 
 
 @RunWith(SpringRunner.class)
@@ -25,6 +32,8 @@ public class ApplicationTests {
     private SysImageService sysImageService;
     @Autowired
     private DockerClient dockerClient;
+    @Autowired
+    private MQProducer mqProducer;
     @Test
     public void contextLoads() throws DockerException, InterruptedException {
         // Create a client  by using the builder 通过builder连接一个客户机
@@ -101,6 +110,17 @@ public class ApplicationTests {
         //dockerClient.buildImageCmd(baseDir).exec(callback).awaitImageId();
 
         //System.out.println(sysImageService.inspectImage("centos:5").containerConfig().cmd());
+
+
+
+        // 发送延时消息
+        Map<String,Object> maps = new HashMap<>();
+        maps.put("msg","test mq");
+        Task task =  new Task("测试mq", maps);
+        Destination destination = new ActiveMQQueue("MQ_QUEUE_TEST");
+        mqProducer.send(destination, JsonUtils.objectToJson(task));
+
+
 
 }
 
