@@ -19,6 +19,9 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 
 import javax.jms.Destination;
 import java.util.HashMap;
@@ -110,18 +113,7 @@ public class ApplicationTests {
         //dockerClient.buildImageCmd(baseDir).exec(callback).awaitImageId();
 
         //System.out.println(sysImageService.inspectImage("centos:5").containerConfig().cmd());
-
-
-
-        // 发送延时消息
-        Map<String,Object> maps = new HashMap<>();
-        maps.put("msg","test mq");
-        Task task =  new Task("测试mq", maps);
-        Destination destination = new ActiveMQQueue("MQ_QUEUE_TEST");
-        mqProducer.send(destination, JsonUtils.objectToJson(task));
-
-
+    }
 
 }
 
-}

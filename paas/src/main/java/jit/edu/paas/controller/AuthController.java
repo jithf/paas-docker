@@ -6,6 +6,7 @@ import jit.edu.paas.domain.entity.SysLogin;
 import jit.edu.paas.domain.enums.ResultEnum;
 import jit.edu.paas.domain.vo.ResultVo;
 import jit.edu.paas.service.SysLoginService;
+import jit.edu.paas.service.UserContainerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.AuthenticationException;
@@ -31,9 +32,12 @@ public class AuthController {
     private SysLoginService loginService;
     @Value("${nginx.server}")
     private String nginxServer;
+    @Autowired
+    private UserContainerService userContainerService;
 
     /**
      * 验证密码是否正确
+     *
      * @author jitwxs
      * @since 2018/6/28 11:11
      */
@@ -46,6 +50,7 @@ public class AuthController {
 
     /**
      * 注册校验
+     *
      * @author jitwxs
      * @since 2018/7/1 8:40
      */
@@ -56,23 +61,24 @@ public class AuthController {
 
     /**
      * 用户注册
+     *
      * @author hf
      * @since 2018/6/28 9:17
      */
     @PostMapping("/register")
-    public ResultVo register(String username, String password,String email) {
-        if(StringUtils.isBlank(username,password,email)) {
+    public ResultVo register(String username, String password, String email) {
+        if (StringUtils.isBlank(username, password, email)) {
             return ResultVoUtils.error(ResultEnum.PARAM_ERROR);
         }
 
         // 1、校验用户名、密码
         ResultVo resultVo = loginService.registerCheck(username, email);
-        if(resultVo.getCode() != ResultEnum.OK.getCode()) {
+        if (resultVo.getCode() != ResultEnum.OK.getCode()) {
             return resultVo;
         }
 
         // 2、生成用户
-        SysLogin sysLogin = new SysLogin(username,password,email);
+        SysLogin sysLogin = new SysLogin(username, password, email);
         // 设置为冻结状态
         sysLogin.setHasFreeze(true);
         loginService.save(sysLogin);
@@ -84,6 +90,7 @@ public class AuthController {
 
     /**
      * 邮件验证
+     *
      * @author hf
      * @since 2018/6/28 9:17
      */
@@ -102,9 +109,9 @@ public class AuthController {
                     "    <meta charset='utf-8'>\n" +
                     "    <title></title>\n" +
                     "</head>\n" +
-                    "<body background='"+imgUrl+"'>\n" +
+                    "<body background='" + imgUrl + "'>\n" +
                     "<div style='position: absolute; bottom:70%;left:50%;margin-left:-60px;'>\n" +
-                    "    <h1>"+ subject +"</h1>\n" +
+                    "    <h1>" + subject + "</h1>\n" +
                     "</div>\n" +
                     "<div style='position: absolute; bottom:65%;left:45.5%;margin-left:-60px;'>\n" +
                     "    <a href='http://127.0.0.1:8080'>" + content + "</a>\n" +
@@ -118,20 +125,34 @@ public class AuthController {
 
     /**
      * 失败方法
+     *
      * @author jitwxs
      * @since 2018/6/28 9:16
      */
     @RequestMapping("/error")
     public ResultVo loginError(HttpServletRequest request) {
         AuthenticationException exception =
-                (AuthenticationException)request.getSession().getAttribute("SPRING_SECURITY_LAST_EXCEPTION");
+                (AuthenticationException) request.getSession().getAttribute("SPRING_SECURITY_LAST_EXCEPTION");
 
         // 如果Spring Security中没有异常，则从request中取
-        if(exception == null) {
+        if (exception == null) {
             ResultEnum resultEnum = (ResultEnum) request.getAttribute("ERR_MSG");
             return ResultVoUtils.error(resultEnum);
         } else {
             return ResultVoUtils.error(ResultEnum.AUTHORITY_ERROR.getCode(), exception.toString());
         }
+    }
+
+
+    /**
+     * test 测试接口 后面要删除
+     *
+     * @author hf
+     * @since 2018/7/1 15:39
+     */
+    @GetMapping("/start")
+    public ResultVo startContainer(String uid, String containerId) {
+        System.out.println("containerId:"+containerId);
+        return userContainerService.startContainerRequest(uid, containerId);
     }
 }

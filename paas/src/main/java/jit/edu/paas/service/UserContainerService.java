@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import jit.edu.paas.domain.entity.UserContainer;
 import jit.edu.paas.domain.enums.ContainerStatusEnum;
 import jit.edu.paas.domain.vo.ResultVo;
+import org.springframework.scheduling.annotation.Async;
 
 /**
  * <p>
@@ -27,7 +28,15 @@ public interface UserContainerService extends IService<UserContainer> {
      * @author jitwxs
      * @since 2018/7/1 15:41
      */
-    ResultVo startContainer(String userId, String containerId);
+    @Async
+    void startContainer(String userId, String containerId);
+
+    /**
+     * 发送开启容器的请求
+     * @author hf
+     * @since 2018/7/1 15:41
+     */
+    ResultVo startContainerRequest(String userId, String containerId);
 
     /**
      * 创建容器
@@ -95,4 +104,11 @@ public interface UserContainerService extends IService<UserContainer> {
      * @since 2018/7/7 9:25
      */
     void cleanCache(String containerId);
+
+    /**
+     * 修改数据库中容器状态
+     * @author jitwxs
+     * @since 2018/7/1 16:48
+     */
+   ResultVo changeStatus(String containerId);
 }

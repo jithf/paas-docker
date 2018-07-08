@@ -6,6 +6,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.UnmodifiableIterator;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.messages.*;
+import jit.edu.paas.commons.activemq.MQProducer;
+import jit.edu.paas.commons.activemq.Task;
 import jit.edu.paas.commons.util.*;
 import jit.edu.paas.commons.util.jedis.JedisClient;
 import jit.edu.paas.domain.entity.SysImage;
@@ -19,11 +21,14 @@ import jit.edu.paas.mapper.UserContainerMapper;
 import jit.edu.paas.mapper.UserProjectMapper;
 import jit.edu.paas.service.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.activemq.command.ActiveMQQueue;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.jms.Destination;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 
@@ -61,6 +66,8 @@ public class UserContainerServiceImpl extends ServiceImpl<UserContainerMapper, U
     private JedisClient jedisClient;
     @Autowired
     private HttpServletRequest request;
+    @Autowired
+    private MQProducer mqProducer;
 
     @Value("${redis.user-container.key}")
     private String key;
@@ -92,12 +99,25 @@ public class UserContainerServiceImpl extends ServiceImpl<UserContainerMapper, U
     }
 
     @Override
+    @Async("taskExecutor")
     @Transactional(rollbackFor = Exception.class)
-    public ResultVo startContainer(String userId, String containerId) {
+    public void startContainer(String userId, String containerId) {
+
+        Map<String,Object> maps = new HashMap<>();
+        Task task =  new Task("开启容器", maps);
+        maps.put("uid",userId);
+        maps.put("containerId",containerId);
+        Destination destination = new ActiveMQQueue("MQ_QUEUE_CONTAINER");
+
         // 1、鉴权
         ResultVo resultVo = checkPermission(userId, containerId);
         if(ResultEnum.OK.getCode() != resultVo.getCode()) {
-            return resultVo;
+            maps.put("result","容器启动失败");
+            maps.put("message","鉴权失败");
+            task.setData(maps);
+            mqProducer.send(destination, JsonUtils.objectToJson(task));
+            //return resultVo;
+            return;
         }
 
         // 2、开启容器
@@ -106,16 +126,40 @@ public class UserContainerServiceImpl extends ServiceImpl<UserContainerMapper, U
             // 写入日志
             projectLogService.saveSuccessLog(getProjectId(containerId),containerId,ProjectLogTypeEnum.START_CONTAINER);
 
-            // 查询并修改状态
-            return changeStatus(containerId);
+            maps.put("result","容器启动成功");
+            task.setData(maps);
+            mqProducer.send(destination, JsonUtils.objectToJson(task));
+
+            return;
+
         } catch (Exception e) {
             log.error("开启容器出现异常，异常位置：{}，错误信息：{}",
-                    "UserContainerServiceImpl.startContainer()",HttpClientUtils.getStackTraceAsString(e));
+                   "UserContainerServiceImpl.startContainer()",HttpClientUtils.getStackTraceAsString(e));
+            //e.printStackTrace();
+
             // 写入日志
             projectLogService.saveErrorLog(getProjectId(containerId),containerId,ProjectLogTypeEnum.START_CONTAINER_ERROR,ResultEnum.DOCKER_EXCEPTION);
 
-            return ResultVoUtils.error(ResultEnum.DOCKER_EXCEPTION);
+            maps.put("result","容器启动失败");
+            maps.put("message",e.getMessage());
+            task.setData(maps);
+            mqProducer.send(destination, JsonUtils.objectToJson(task));
+
+            //return ResultVoUtils.error(ResultEnum.DOCKER_EXCEPTION);
+            return;
         }
+    }
+
+    /**
+     * 发送开启容器的请求
+     * @author hf
+     * @since 2018/7/1 15:41
+     */
+    @Override
+    public ResultVo startContainerRequest(String userId, String containerId) {
+        System.out.println("容器启动中");
+        startContainer(userId,containerId);
+        return ResultVoUtils.success("容器启动中");
     }
 
     @Override
@@ -447,7 +491,8 @@ public class UserContainerServiceImpl extends ServiceImpl<UserContainerMapper, U
      * @author jitwxs
      * @since 2018/7/1 16:48
      */
-    private ResultVo changeStatus(String containerId) {
+    @Override
+    public ResultVo changeStatus(String containerId) {
         ContainerStatusEnum statusEnum = getStatus(containerId);
         if(statusEnum == null) {
             return ResultVoUtils.error(ResultEnum.DOCKER_EXCEPTION);

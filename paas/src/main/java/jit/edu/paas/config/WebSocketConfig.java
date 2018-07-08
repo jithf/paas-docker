@@ -5,6 +5,8 @@ import jit.edu.paas.commons.websocket.ContainerExecWSHandler;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
@@ -25,7 +27,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
     }
 
     @Bean
-    public ContainerExecWSHandler containerExecWSHandler(){
+    public ContainerExecWSHandler containerExecWSHandler() {
         return new ContainerExecWSHandler();
     }
 

@@ -42,7 +42,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.authorizeRequests()
-                .antMatchers("/auth/**").permitAll()
+                .antMatchers("/auth/**","/websocket/**").permitAll()
                 .anyRequest().authenticated()
                 .and()
                 .addFilter(new JwtLoginFilter(authenticationManager()))
@@ -57,5 +57,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     public void configure(WebSecurity web) throws Exception {
         // 对静态资源放行
         web.ignoring().antMatchers( "/doc.html");
+        web.ignoring().antMatchers( "/test.html");
     }
 }

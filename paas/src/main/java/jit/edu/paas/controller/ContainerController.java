@@ -105,7 +105,7 @@ public class ContainerController {
     @GetMapping("/start/{containerId}")
     @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_SYSTEM')")
     public ResultVo startContainer(@RequestAttribute String uid, @PathVariable String containerId){
-        return userContainerService.startContainer(uid, containerId);
+        return userContainerService.startContainerRequest(uid, containerId);
     }
 
     /**
