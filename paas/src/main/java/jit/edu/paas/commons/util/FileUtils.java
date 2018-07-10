@@ -186,7 +186,7 @@ public class FileUtils extends org.apache.commons.io.FileUtils {
             FileOutputStream fos = new FileOutputStream(file1);
             fos.write(content);
             fos.flush();
-            result = result + fileNames + ":" + content.length;
+            result = "D:\\test\\"+fileNames;
             System.out.println("write success");
         }
         return result;
@@ -251,6 +251,23 @@ public class FileUtils extends org.apache.commons.io.FileUtils {
         return res;
     }
 
+    /**
+     * 文件传输至虚拟机
+     *
+     * @author hf
+     * @Date 2018/07/10
+     */
+    public static void transFile(HttpServletRequest request) {
+        try {
+            String filelPath = upload(request);
+            FileTransferClient client = new FileTransferClient(); // 启动客户端连接
+            client.sendFile(filelPath); // 传输文件
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public static void main(String[] args) {
+
     }
 }
