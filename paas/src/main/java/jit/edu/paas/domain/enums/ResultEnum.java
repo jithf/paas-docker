@@ -51,6 +51,8 @@ public enum ResultEnum {
     CONTAINER_START_ERROR("容器启动失败",47),
     USER_AUTHORITY_ERROR("用户身份获取失败",48),
     CONTAINER_ALREADY_START("容器已经启动",49),
+    CONTAINER_ALREADY_PAUSE("容器已经暂停",49),
+    CONTAINER_ALREADY_STOP("容器已经停止",49),
     REQUEST_TIMEOUT("请求超时",50),
     REQUEST_ERROR("请求错误",51);
 

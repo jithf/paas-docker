@@ -44,54 +44,104 @@ public interface UserContainerService extends IService<UserContainer> {
 //    void startContainer(String userId, String containerId);
 
     /**
-     * 创建容器
-     * @author jitwxs
+     * 创建容器任务
+     * @author hf
      * @since 2018/7/1 16:00
      */
-    ResultVO createContainer(String userId, String imageId, String[] cmd, Map<String, Integer> portMap,
+    void createContainerTask(String userId, String imageId, String[] cmd, Map<String, Integer> portMap,
                              String containerName, String projectId, String[] env, String[] destination);
 
+//    /**
+//     * 创建容器
+//     * @author jitwxs
+//     * @since 2018/7/1 16:00
+//     */
+//    ResultVO createContainer(String userId, String imageId, String[] cmd, Map<String, Integer> portMap,
+//                             String containerName, String projectId, String[] env, String[] destination);
+
     /**
-     * 停止容器
-     * @author jitwxs
+     * 停止容器服务
+     * @author hf
      * @since 2018/7/1 16:00
      */
-    ResultVO stopContainer(String userId, String containerId);
+    void stopContainerTask(String userId, String containerId);
+
+//    /**
+//     * 停止容器
+//     * @author jitwxs
+//     * @since 2018/7/1 16:00
+//     */
+//    ResultVO stopContainer(String userId, String containerId);
 
     /**
      * 强制停止容器
-     * @author jitwxs
+     * @author hf
      * @since 2018/7/1 16:03
      */
-    ResultVO killContainer(String userId, String containerId);
+    void killContainerTask(String userId, String containerId);
+
+//    /**
+//     * 强制停止容器
+//     * @author jitwxs
+//     * @since 2018/7/1 16:03
+//     */
+//    ResultVO killContainer(String userId, String containerId);
 
     /**
-     * 移除容器
-     * @author jitwxs
+     * 移除容器任务
+     * @author hf
      * @since 2018/7/1 16:06
      */
-    ResultVO removeContainer(String userId, String containerId);
+    void removeContainerTask(String userId, String containerId);
+
+//        /**
+//     * 移除容器
+//     * @author jitwxs
+//     * @since 2018/7/1 16:06
+//     */
+//    ResultVO removeContainer(String userId, String containerId);
 
     /**
      * 暂停容器
      * @author jitwxs
      * @since 2018/7/1 16:08
      */
-    ResultVO pauseContainer(String userId, String containerId);
+    void pauseContainerTask(String userId, String containerId);
+
+//    /**
+//     * 暂停容器
+//     * @author jitwxs
+//     * @since 2018/7/1 16:08
+//     */
+//    ResultVO pauseContainer(String userId, String containerId);
 
     /**
      * 重启容器
-     * @author jitwxs
+     * @author hf
      * @since 2018/7/9 15:52
      */
-    ResultVO restartContainer(String userId, String containerId);
+    void restartContainerTask(String userId, String containerId);
+
+//    /**
+//     * 重启容器
+//     * @author jitwxs
+//     * @since 2018/7/9 15:52
+//     */
+//    ResultVO restartContainer(String userId, String containerId);
 
     /**
      * 从暂停状态恢复
-     * @author jitwxs
+     * @author hf
      * @since 2018/7/1 16:10
      */
-    ResultVO continueContainer(String userId, String containerId);
+    void continueContainerTask(String userId, String containerId);
+
+//    /**
+//     * 从暂停状态恢复
+//     * @author jitwxs
+//     * @since 2018/7/1 16:10
+//     */
+//    ResultVO continueContainer(String userId, String containerId);
 
     /**
      * 获取运行容器的内部状态

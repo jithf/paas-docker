@@ -144,7 +144,9 @@ public class ContainerController {
         }
         portMap.put("80", 37766);
 
-        return containerService.createContainer(uid, imageId, cmd, portMap, containerName, projectId, env, destination);
+        containerService.createContainerTask(uid, imageId, cmd, portMap, containerName, projectId, env, destination);
+
+        return ResultVOUtils.success("容器创建中");
     }
 
     /**
@@ -167,7 +169,8 @@ public class ContainerController {
     @GetMapping("/pause/{containerId}")
     @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_SYSTEM')")
     public ResultVO pauseContainer(@RequestAttribute String uid, @PathVariable String containerId){
-        return containerService.pauseContainer(uid, containerId);
+        containerService.pauseContainerTask(uid, containerId);
+        return ResultVOUtils.success("容器暂停中");
     }
 
     /**
@@ -178,7 +181,8 @@ public class ContainerController {
     @GetMapping("/continue/{containerId}")
     @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_SYSTEM')")
     public ResultVO continueContainer(@RequestAttribute String uid, @PathVariable String containerId){
-        return containerService.continueContainer(uid, containerId);
+        containerService.continueContainerTask(uid, containerId);
+        return ResultVOUtils.success("容器恢复运行中");
     }
 
     /**
@@ -189,7 +193,8 @@ public class ContainerController {
     @GetMapping("/stop/{containerId}")
     @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_SYSTEM')")
     public ResultVO stopContainer(@RequestAttribute String uid, @PathVariable String containerId){
-        return containerService.stopContainer(uid, containerId);
+        containerService.stopContainerTask(uid, containerId);
+        return ResultVOUtils.success("容器停止中");
     }
 
     /**
@@ -200,7 +205,8 @@ public class ContainerController {
     @GetMapping("/kill/{containerId}")
     @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_SYSTEM')")
     public ResultVO killContainer(@RequestAttribute String uid, @PathVariable String containerId){
-        return containerService.killContainer(uid, containerId);
+        containerService.killContainerTask(uid, containerId);
+        return ResultVOUtils.success("容器强制停止中");
     }
 
     /**
@@ -211,7 +217,8 @@ public class ContainerController {
     @GetMapping("/restart/{containerId}")
     @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_SYSTEM')")
     public ResultVO restartContainer(@RequestAttribute String uid, @PathVariable String containerId){
-        return containerService.restartContainer(uid, containerId);
+        containerService.restartContainerTask(uid, containerId);
+        return ResultVOUtils.success("容器重新启动中");
     }
 
     /**
@@ -233,7 +240,8 @@ public class ContainerController {
     @DeleteMapping("/remove/{containerId}")
     @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_SYSTEM')")
     public ResultVO removeContainer(@RequestAttribute String uid, @PathVariable String containerId){
-        return containerService.removeContainer(uid, containerId);
+        containerService.removeContainerTask(uid, containerId);
+        return ResultVOUtils.success("容器删除中");
     }
 
     /**
