@@ -123,7 +123,6 @@ public class FileUtils extends org.apache.commons.io.FileUtils {
      * @since 2018/6/17 21:54
      */
     public static void resizeImage(String srcImgPath, String distImgPath, int width, int height) throws IOException {
-
         File srcFile = new File(srcImgPath);
         Image srcImg = ImageIO.read(srcFile);
         BufferedImage buffImg = null;
@@ -249,25 +248,5 @@ public class FileUtils extends org.apache.commons.io.FileUtils {
             e.printStackTrace();
         }
         return res;
-    }
-
-    /**
-     * 文件传输至虚拟机
-     *
-     * @author hf
-     * @Date 2018/07/10
-     */
-    public static void transFile(HttpServletRequest request) {
-        try {
-            String filelPath = upload(request);
-            FileTransferClient client = new FileTransferClient(); // 启动客户端连接
-            client.sendFile(filelPath); // 传输文件
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void main(String[] args) {
-
     }
 }

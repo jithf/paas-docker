@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.plugins.Page;
 import com.baomidou.mybatisplus.service.IService;
 import jit.edu.paas.domain.dto.UserContainerDTO;
 import jit.edu.paas.domain.entity.UserContainer;
+import jit.edu.paas.domain.enums.ContainerOpEnum;
 import jit.edu.paas.domain.enums.ContainerStatusEnum;
 import jit.edu.paas.domain.vo.ResultVO;
 
@@ -28,20 +29,21 @@ public interface UserContainerService extends IService<UserContainer> {
     UserContainerDTO getById(String id);
 
     /**
-     * 开启容器任务
+     * 是否允许容器操作
+     * @param userId 用户ID
+     * @param containerId 容器ID
+     * @param containerOpEnum 目标操作
      * @author jitwxs
-     * @since 2018/7/1 15:41
+     * @since 2018/7/10 17:14
      */
-//    @Async("taskExecutor")
-    void startContainerTask(String userId, String containerId);
+    ResultVO hasAllowOp(String userId, String containerId, ContainerOpEnum containerOpEnum);
 
-//    /**
-//     * 异步开启容器
-//     * @author jitwxs
-//     * @since 2018/7/1 15:41
-//     */
-//    @Async("taskExecutor")
-//    void startContainer(String userId, String containerId);
+    /**
+     * 创建容器前校验
+     * @author jitwxs
+     * @since 2018/7/10 20:11
+     */
+    ResultVO createContainerCheck(String userId, String imageId,Map<String, Integer> portMap, String projectId);
 
     /**
      * 创建容器任务
@@ -51,13 +53,12 @@ public interface UserContainerService extends IService<UserContainer> {
     void createContainerTask(String userId, String imageId, String[] cmd, Map<String, Integer> portMap,
                              String containerName, String projectId, String[] env, String[] destination);
 
-//    /**
-//     * 创建容器
-//     * @author jitwxs
-//     * @since 2018/7/1 16:00
-//     */
-//    ResultVO createContainer(String userId, String imageId, String[] cmd, Map<String, Integer> portMap,
-//                             String containerName, String projectId, String[] env, String[] destination);
+    /**
+     * 开启容器任务
+     * @author jitwxs
+     * @since 2018/7/1 15:41
+     */
+    void startContainerTask(String userId, String containerId);
 
     /**
      * 停止容器服务
@@ -66,26 +67,12 @@ public interface UserContainerService extends IService<UserContainer> {
      */
     void stopContainerTask(String userId, String containerId);
 
-//    /**
-//     * 停止容器
-//     * @author jitwxs
-//     * @since 2018/7/1 16:00
-//     */
-//    ResultVO stopContainer(String userId, String containerId);
-
     /**
      * 强制停止容器
      * @author hf
      * @since 2018/7/1 16:03
      */
     void killContainerTask(String userId, String containerId);
-
-//    /**
-//     * 强制停止容器
-//     * @author jitwxs
-//     * @since 2018/7/1 16:03
-//     */
-//    ResultVO killContainer(String userId, String containerId);
 
     /**
      * 移除容器任务
@@ -94,26 +81,12 @@ public interface UserContainerService extends IService<UserContainer> {
      */
     void removeContainerTask(String userId, String containerId);
 
-//        /**
-//     * 移除容器
-//     * @author jitwxs
-//     * @since 2018/7/1 16:06
-//     */
-//    ResultVO removeContainer(String userId, String containerId);
-
     /**
      * 暂停容器
      * @author jitwxs
      * @since 2018/7/1 16:08
      */
     void pauseContainerTask(String userId, String containerId);
-
-//    /**
-//     * 暂停容器
-//     * @author jitwxs
-//     * @since 2018/7/1 16:08
-//     */
-//    ResultVO pauseContainer(String userId, String containerId);
 
     /**
      * 重启容器
@@ -122,26 +95,12 @@ public interface UserContainerService extends IService<UserContainer> {
      */
     void restartContainerTask(String userId, String containerId);
 
-//    /**
-//     * 重启容器
-//     * @author jitwxs
-//     * @since 2018/7/9 15:52
-//     */
-//    ResultVO restartContainer(String userId, String containerId);
-
     /**
      * 从暂停状态恢复
      * @author hf
      * @since 2018/7/1 16:10
      */
     void continueContainerTask(String userId, String containerId);
-
-//    /**
-//     * 从暂停状态恢复
-//     * @author jitwxs
-//     * @since 2018/7/1 16:10
-//     */
-//    ResultVO continueContainer(String userId, String containerId);
 
     /**
      * 获取运行容器的内部状态
