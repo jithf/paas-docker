@@ -58,7 +58,9 @@ public enum ResultEnum {
     CONTAINER_STATUS_ERROR("容器状态错误",54),
     VOLUME_NOT_EXIST("数据卷不存在",55),
     VOLUME_UPLOAD_ERROR("数据卷上传失败",56),
-    UPLOAD_TYPE_ERROR("上传类型错误",57);
+    UPLOAD_TYPE_ERROR("上传类型错误",57),
+    SERVICE_NOT_FOUND("服务不存在",58),
+    SERVICE_INSPECT_ERROR("服务查询失败",59);
 
     private String message;
     private int code;

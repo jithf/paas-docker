@@ -24,7 +24,9 @@ public enum SysLogTypeEnum {
     DELETE_IMAGE_FROM_HUB("删除Hub上镜像", 42),
     CLEAN_VOLUMES("清理数据卷", 50),
     FREEZE_USER("冻结用户", 60),
-    CANCEL_FREEZE_USER("取消冻结用户", 61);
+    CANCEL_FREEZE_USER("取消冻结用户", 61),
+    DELETE_SERVICE("删除服务", 71),
+    CREATE_SERVICE("创建服务",72);
 
     private String message;
     private int code;
