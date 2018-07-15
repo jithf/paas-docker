@@ -1,7 +1,6 @@
 package jit.edu.paas.mapper;
 
 import com.baomidou.mybatisplus.mapper.BaseMapper;
-
 import com.baomidou.mybatisplus.plugins.pagination.Pagination;
 import jit.edu.paas.domain.entity.UserService;
 import org.apache.ibatis.annotations.Param;

@@ -3,27 +3,28 @@ package jit.edu.paas.domain.enums;
 import lombok.Getter;
 
 /**
- * 仓储类型枚举
+ * WebSocket消息类型枚举
  * @author jitwxs
  * @since 2018/6/5 23:53
  */
 @Getter
-public enum RepositoryTypeEnum {
-    DOCKER_CONTAINER("Docker容器", 1),
-    DOCKER_HUB("Docker HUB", 2);
+public enum WebSocketTypeEnum {
+    CONTAINER("容器操作", 0),
+    SYS_IMAGE("系统镜像操作", 1),
+    HUB_IMAGE("Hub镜像操作", 2);
 
     private String message;
     private int code;
 
-    RepositoryTypeEnum(String message, int code) {
+    WebSocketTypeEnum(String message, int code) {
         this.message = message;
         this.code = code;
     }
-
     public static String getMessage(int code) {
-        for (RepositoryTypeEnum enums : RepositoryTypeEnum.values()) {
+        for (WebSocketTypeEnum enums : WebSocketTypeEnum.values()) {
             if (enums.getCode() == code) {
-                return enums.message;
+                String message = enums.message;
+                return message;
             }
         }
         return null;

@@ -1,5 +1,6 @@
 package jit.edu.paas.domain.enums;
 
+
 import lombok.Getter;
 
 /**
