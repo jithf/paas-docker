@@ -6,15 +6,15 @@ import jit.edu.paas.commons.convert.UserContainerDTOConvert;
 import jit.edu.paas.commons.util.ResultVOUtils;
 import jit.edu.paas.commons.util.StringUtils;
 import jit.edu.paas.domain.dto.UserContainerDTO;
+import jit.edu.paas.domain.entity.RepositoryImage;
+import jit.edu.paas.domain.entity.SysImage;
 import jit.edu.paas.domain.entity.UserContainer;
 import jit.edu.paas.domain.enums.ContainerOpEnum;
 import jit.edu.paas.domain.enums.ContainerStatusEnum;
 import jit.edu.paas.domain.enums.ResultEnum;
 import jit.edu.paas.domain.enums.RoleEnum;
 import jit.edu.paas.domain.vo.ResultVO;
-import jit.edu.paas.service.SysLoginService;
-import jit.edu.paas.service.UserContainerService;
-import jit.edu.paas.service.UserProjectService;
+import jit.edu.paas.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -38,6 +38,10 @@ public class ContainerController {
     private SysLoginService loginService;
     @Autowired
     private UserProjectService projectService;
+    @Autowired
+    private SysImageService sysImageService;
+    @Autowired
+    private RepositoryImageService repositoryImageService;
 
     @Value("${docker.server.address}")
     private String dockerAddress;
@@ -152,13 +156,45 @@ public class ContainerController {
      */
     @PostMapping("/create")
     @PreAuthorize("hasRole('ROLE_USER')")
-    public ResultVO createContainer(String imageId, String containerName, String projectId,
+    public ResultVO createContainer(Integer type,String imageId, String imageName,String containerName, String projectId,
                                     Map<String,String> portMap, String[] cmd, String[] env, String[] destination,
                                     @RequestAttribute String uid, HttpServletRequest request){
         // 输入验证
-        if(StringUtils.isBlank(imageId,containerName,projectId)) {
+        if(StringUtils.isBlank(containerName,projectId) || type == null) {
             return ResultVOUtils.error(ResultEnum.PARAM_ERROR);
         }
+
+        //type: 0表示本地镜像 1表示Docker Hub镜像 2表示Hub镜像
+        if(type == 1 && StringUtils.isNotBlank(imageName)) {
+            String res=sysImageService.pullImageTask(imageName,uid,request);
+            if(res == null) {
+                return ResultVOUtils.error(ResultEnum.DOCKER_EXCEPTION);
+            }
+            imageId = res;
+        } else if(type == 2 && StringUtils.isNotBlank(imageId)) {
+            // 校验
+            ResultVO resultVO = repositoryImageService.pullCheck(imageId);
+            if(ResultEnum.OK.getCode() != resultVO.getCode() && resultVO.getCode() != 45) {
+                return resultVO;
+            }
+            // 判断本地是否存在 若存在 则继续执行创建容器步骤 否则 从Hub上拉取
+            SysImage s = sysImageService.getByFullName(repositoryImageService.getById(imageId).getFullName());
+            if(s!= null) {
+                imageId = s.getId();
+            } else {
+                RepositoryImage repositoryImage = (RepositoryImage) resultVO.getData();
+                String ult = repositoryImageService.pullTask(repositoryImage, uid, request);
+                if (ult == null) {
+                    return ResultVOUtils.error(ResultEnum.PULL_ERROR);
+                }
+                imageId = ult;
+            }
+        }
+
+        if(StringUtils.isBlank(imageId)) {
+            return ResultVOUtils.error(ResultEnum.PARAM_ERROR);
+        }
+
         // 创建校验
         ResultVO resultVO = containerService.createContainerCheck(uid, imageId, portMap, projectId);
         if(ResultEnum.OK.getCode() != resultVO.getCode()) {

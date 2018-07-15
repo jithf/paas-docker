@@ -180,7 +180,7 @@ public class UserServiceServiceImpl extends ServiceImpl<UserServiceMapper, UserS
     @Override
     public void createServiceTask(String userId,String imageId, String[] cmd, Map<String,String> portMap,int replicas,
                                   String serviceName, String projectId, String[] env, String source,
-                                  String destination,Map<String,String> labels, HttpServletRequest request) {
+                                  String destination,Map<String,String> labels, Integer type,String serviceId,HttpServletRequest request) {
         SysImage image = imageService.getById(imageId);
         UserService us = new UserService();
         ServiceSpec.Builder builder = ServiceSpec.builder();
@@ -201,7 +201,7 @@ public class UserServiceServiceImpl extends ServiceImpl<UserServiceMapper, UserS
         if(StringUtils.isNotBlank(destination)) {
             Mount.Builder mountBuilder = Mount.builder();
             mountBuilder.type("volume");
-            mountBuilder.source(source);
+//            mountBuilder.source(source);
             mountBuilder.target(destination);
             mountBuilder.volumeOptions(VolumeOptions.builder().build());
             containerBuilder.mounts(mountBuilder.build());
@@ -251,47 +251,89 @@ public class UserServiceServiceImpl extends ServiceImpl<UserServiceMapper, UserS
             builder.endpointSpec(endpointSpec);
         }
 
-        // 2、创建服务
-        try {
-            ServiceCreateResponse creation = dockerSwarmClient.createService(builder.build());
+        if(type == 0) {
+            // 2、创建服务
+            try {
+                ServiceCreateResponse creation = dockerSwarmClient.createService(builder.build());
 
-            us.setId(creation.id());
-            us.setName(serviceName);
-            us.setUserId(userId);
-            us.setProjectId(projectId);
-            us.setImage(image.getFullName());
-            us.setReplicas(replicas);
+                us.setId(creation.id());
+                us.setName(serviceName);
+                us.setUserId(userId);
+                us.setProjectId(projectId);
+                us.setImage(image.getFullName());
+                us.setReplicas(replicas);
 
-            // 为数据库中的sysvolumes插入
-            if(StringUtils.isNotBlank(destination)) {
-                ImmutableList<Mount> info = dockerSwarmClient.inspectService(creation.id()).spec().taskTemplate().containerSpec().mounts();
-                if (info != null) {
-                    SysVolume sysVolume = new SysVolume();
-                    sysVolume.setContainerId(creation.id());
-                    sysVolume.setDestination(destination);
-                    sysVolume.setName(info.get(0).target());
-                    sysVolume.setSource(info.get(0).source());
-                    sysVolumesMapper.insert(sysVolume);
+                // 为数据库中的sysvolumes插入
+                if (StringUtils.isNotBlank(destination)) {
+                    ImmutableList<Mount> info = dockerSwarmClient.inspectService(creation.id()).spec().taskTemplate().containerSpec().mounts();
+                    if (info != null) {
+                        SysVolume sysVolume = new SysVolume();
+                        sysVolume.setContainerId(creation.id());
+                        sysVolume.setDestination(destination);
+                        sysVolume.setName(info.get(0).target());
+                        sysVolume.setSource(info.get(0).source());
+                        sysVolumesMapper.insert(sysVolume);
+                    }
                 }
+
+                // 3、插入数据库
+                userServiceMapper.insert(us);
+
+                // 4、写入日志
+                sysLogService.saveLog(request, SysLogTypeEnum.CREATE_SERVICE);
+                projectLogService.saveSuccessLog(projectId, us.getId(), ProjectLogTypeEnum.CREATE_SERVICE);
+
+                sendMQ(userId, creation.id(), ResultVOUtils.successWithMsg("服务创建成功"));
+            } catch (Exception e) {
+                log.error("创建服务出现异常，异常位置：{}，错误栈：{}",
+                        "UserServiceServiceImpl.createServiceTask()", HttpClientUtils.getStackTraceAsString(e));
+
+                // 写入日志
+                sysLogService.saveLog(request, SysLogTypeEnum.CREATE_SERVICE, e);
+                projectLogService.saveErrorLog(projectId, us.getId(), ProjectLogTypeEnum.CREATE_SERVICE_ERROR, ResultEnum.DOCKER_EXCEPTION);
+
+                sendMQ(userId, null, ResultVOUtils.error(ResultEnum.DOCKER_EXCEPTION));
+            }
+        } else {
+            // 2、更新服务
+            try {
+                dockerSwarmClient.updateService(serviceId,dockerSwarmClient.inspectService(serviceId).version().index(),builder.build());
+                us.setId(serviceId);
+                us.setProjectId(projectId);
+                us.setReplicas(replicas);
+
+                // 为数据库中的sysvolumes插入
+                if (StringUtils.isNotBlank(destination)) {
+                    ImmutableList<Mount> info = dockerSwarmClient.inspectService(serviceId).spec().taskTemplate().containerSpec().mounts();
+                    if (info != null) {
+                        SysVolume sysVolume = new SysVolume();
+                        sysVolume.setContainerId(serviceId);
+                        sysVolume.setDestination(destination);
+                        sysVolume.setName(info.get(0).target());
+                        sysVolume.setSource(info.get(0).source());
+                        sysVolumesMapper.insert(sysVolume);
+                    }
+                }
+
+                // 3、插入数据库
+                userServiceMapper.update(us,new EntityWrapper<UserService>().eq("id", serviceId));
+
+                // 4、写入日志
+                sysLogService.saveLog(request, SysLogTypeEnum.UPDATE_SERVICE);
+                projectLogService.saveSuccessLog(projectId, us.getId(), ProjectLogTypeEnum.UPDATE_SERVICE);
+
+                sendMQ(userId, serviceId, ResultVOUtils.successWithMsg("服务更新成功"));
+            } catch (Exception e) {
+                log.error("更新服务出现异常，异常位置：{}，错误栈：{}",
+                        "UserServiceServiceImpl.createServiceTask()", HttpClientUtils.getStackTraceAsString(e));
+
+                // 写入日志
+                sysLogService.saveLog(request, SysLogTypeEnum.UPDATE_SERVICE, e);
+                projectLogService.saveErrorLog(projectId, us.getId(), ProjectLogTypeEnum.UPDATE_SERVICE_ERROR, ResultEnum.DOCKER_EXCEPTION);
+
+                sendMQ(userId, null, ResultVOUtils.error(ResultEnum.DOCKER_EXCEPTION));
             }
 
-            // 3、插入数据库
-            userServiceMapper.insert(us);
-
-            // 4、写入日志
-            sysLogService.saveLog(request, SysLogTypeEnum.CREATE_SERVICE);
-            projectLogService.saveSuccessLog(projectId,us.getId(),ProjectLogTypeEnum.CREATE_SERVICE);
-
-            sendMQ(userId, creation.id(), ResultVOUtils.successWithMsg("服务创建成功"));
-        } catch (Exception e) {
-            log.error("创建服务出现异常，异常位置：{}，错误栈：{}",
-                    "UserServiceServiceImpl.createServiceTask()", HttpClientUtils.getStackTraceAsString(e));
-
-            // 写入日志
-            sysLogService.saveLog(request, SysLogTypeEnum.CREATE_SERVICE, e);
-            projectLogService.saveErrorLog(projectId,us.getId(),ProjectLogTypeEnum.CREATE_SERVICE_ERROR,ResultEnum.DOCKER_EXCEPTION);
-
-            sendMQ(userId, null, ResultVOUtils.error(ResultEnum.DOCKER_EXCEPTION));
         }
     }
 

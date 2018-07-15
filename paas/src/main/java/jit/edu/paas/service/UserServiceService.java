@@ -64,7 +64,7 @@ public interface UserServiceService extends IService<UserService> {
      */
     void createServiceTask(String userId, String imageId, String[] cmd, Map<String,String> portMap, int replicas,
                            String serviceName, String projectId, String[] env, String source,
-                           String destination, Map<String,String> labels, HttpServletRequest request);
+                           String destination, Map<String,String> labels, Integer type,String serviceId,HttpServletRequest request);
 
     /**
      * 删除服务任务

@@ -332,7 +332,7 @@ public class SysImageServiceImpl extends ServiceImpl<SysImageMapper, SysImage> i
     @Async("taskExecutor")
     @Transactional(rollbackFor = CustomException.class)
     @Override
-    public void pullImageTask(String name, String userId, HttpServletRequest request) {
+    public String pullImageTask(String name, String userId, HttpServletRequest request) {
         //若用户未输入版本号 则默认pull最新的版本
         if (!name.contains(":")) {
             name = name + ":latest";
@@ -340,8 +340,12 @@ public class SysImageServiceImpl extends ServiceImpl<SysImageMapper, SysImage> i
 
         // 判断本地是否有镜像
         try {
-            if(dockerClient.listImages(DockerClient.ListImagesParam.byName(name)).size() > 0) {
+            List<Image> images = dockerClient.listImages(DockerClient.ListImagesParam.byName(name));
+            if(images.size() > 0) {
                 sendMQ(userId, null, ResultVOUtils.error(ResultEnum.PULL_ERROR_BY_EXIST));
+                //如果本地有，但数据库中没有，说明本地与数据库数据不一致，执行同步方法
+                sync();
+                return images.get(0).id();
             }
             // 如果本地没有，但数据库中有，说明本地与数据库数据不一致，执行同步方法
             if(getByFullName(name) != null) {
@@ -351,6 +355,7 @@ public class SysImageServiceImpl extends ServiceImpl<SysImageMapper, SysImage> i
             log.error("查询本地镜像失败，错误位置：{}，镜像名：{}，错误栈：{}",
                     "SysImageServiceImpl.pullImageFromHub()", name, HttpClientUtils.getStackTraceAsString(e));
             sendMQ(userId, null, ResultVOUtils.error(ResultEnum.DOCKER_EXCEPTION));
+            return null;
         }
 
         // pull 镜像
@@ -365,6 +370,7 @@ public class SysImageServiceImpl extends ServiceImpl<SysImageMapper, SysImage> i
             sysLogService.saveLog(request, SysLogTypeEnum.PULL_IMAGE_FROM_DOCKER_HUB, e);
 
             sendMQ(userId, null, ResultVOUtils.error(ResultEnum.PULL_ERROR));
+            return null;
         }
 
         // 保存信息
@@ -379,11 +385,13 @@ public class SysImageServiceImpl extends ServiceImpl<SysImageMapper, SysImage> i
             imageMapper.insert(sysImage);
 
             sendMQ(userId, null, ResultVOUtils.successWithMsg("镜像拉取成功"));
+            return image.id();
         } catch (Exception e) {
             log.error("获取镜像详情失败，错误位置：{}，镜像名：{}，错误栈：{}",
                     "SysImageServiceImpl.pullImageFromHub()", name, HttpClientUtils.getStackTraceAsString(e));
 
             sendMQ(userId, null, ResultVOUtils.error(ResultEnum.DOCKER_EXCEPTION));
+            return null;
         }
     }
 

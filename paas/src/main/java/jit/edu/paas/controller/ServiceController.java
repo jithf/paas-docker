@@ -176,35 +176,52 @@ public class ServiceController {
      * @param destination 服务内部目录
      * @param labels 标签
      * @param replicas 横向扩展个数，默认为1
+     * @param type 0代表新建 1代表修改
      * @author jitwxs
      * @since 2018/7/1 15:52
      */
     @PostMapping("/create")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_SYSTEM')")
     public ResultVO createContainer(String imageId, String serviceName, String projectId,
                                     Map<String,String> portMap, String[] cmd, String[] env, String source,
                                     String destination, @RequestParam(defaultValue = "1") int replicas, Map<String,String> labels,
-                                    @RequestAttribute String uid, HttpServletRequest request){
+                                    @RequestAttribute String uid, Integer type, String serviceId, HttpServletRequest request) {
+        portMap.put("80", "10220");
         // 输入验证
-        if (StringUtils.isBlank(imageId, serviceName, projectId)) {
+        if (StringUtils.isBlank(imageId,projectId) || type == null) {
             return ResultVOUtils.error(ResultEnum.PARAM_ERROR);
         }
 
-        // ServiceName校验
-        ResultVO resultVO1 = userServiceService.checkServiceName(serviceName, uid);
-        if (ResultEnum.OK.getCode() != resultVO1.getCode()) {
-            return resultVO1;
-        }
+        if (type == 0 && serviceName != null) { //新建服务
+            // ServiceName校验
+            ResultVO resultVO1 = userServiceService.checkServiceName(serviceName, uid);
+            if (ResultEnum.OK.getCode() != resultVO1.getCode()) {
+                return resultVO1;
+            }
 
-        // 创建校验
-        ResultVO resultVO = containerService.createContainerCheck(uid, imageId, portMap, projectId);
-        if (ResultEnum.OK.getCode() != resultVO.getCode()) {
-            return resultVO;
-        }
+            // 创建校验
+            ResultVO resultVO = containerService.createContainerCheck(uid, imageId, portMap, projectId);
+            if (ResultEnum.OK.getCode() != resultVO.getCode()) {
+                return resultVO;
+            }
 
-        // 创建服务
-        userServiceService.createServiceTask(uid, imageId, cmd, portMap, replicas, serviceName, projectId,
-                env, source, destination, labels, request);
-        return ResultVOUtils.success("开始创建服务");
+            // 创建服务
+            userServiceService.createServiceTask(uid, imageId, cmd, portMap, replicas, serviceName, projectId,
+                    env, source, destination, labels,type,serviceId, request);
+            return ResultVOUtils.success("开始创建服务");
+        } else { //更新服务
+            if(StringUtils.isBlank(serviceId)) {
+                return ResultVOUtils.error(ResultEnum.PARAM_ERROR);
+            }
+
+            ResultVO resultVO = userServiceService.checkPermission(uid,serviceId);
+            if (ResultEnum.OK.getCode() != resultVO.getCode()) {
+                return resultVO;
+            }
+            // 更新服务
+            userServiceService.createServiceTask(uid, imageId, cmd, portMap, replicas, serviceName, projectId,
+                    env, source, destination, labels,type,serviceId, request);
+            return ResultVOUtils.success("开始更新服务");
+        }
     }
 }

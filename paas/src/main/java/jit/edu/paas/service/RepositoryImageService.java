@@ -81,7 +81,7 @@ public interface RepositoryImageService extends IService<RepositoryImage> {
      * @author jitwxs
      * @since 2018/7/13 19:58
      */
-    void pullTask(RepositoryImage repositoryImage, String userId, HttpServletRequest request);
+    String pullTask(RepositoryImage repositoryImage, String userId, HttpServletRequest request);
 
     /**
      * 从Hub上删除镜像

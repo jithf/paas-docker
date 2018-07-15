@@ -74,7 +74,7 @@ public interface SysImageService extends IService<SysImage> {
      * @author jitwxs
      * @since 2018/7/13 16:26
      */
-    void pullImageTask(String name, String userId, HttpServletRequest request);
+    String pullImageTask(String name, String userId, HttpServletRequest request);
 
     /**
      * 上传镜像到DockerHub任务

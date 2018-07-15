@@ -30,7 +30,9 @@ public enum ProjectLogTypeEnum {
     DELETE_SERVICE("删除服务", 36),
     DELETE_SERVICE_ERROR("删除服务失败", 37),
     CREATE_SERVICE("新建服务", 38),
-    CREATE_SERVICE_ERROR("新建服务失败", 39);
+    CREATE_SERVICE_ERROR("新建服务失败", 39),
+    UPDATE_SERVICE("更新服务",40),
+    UPDATE_SERVICE_ERROR("更新服务失败",40);
     private String message;
     private int code;
 

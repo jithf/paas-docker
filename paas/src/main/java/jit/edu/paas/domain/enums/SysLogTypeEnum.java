@@ -29,7 +29,8 @@ public enum SysLogTypeEnum {
     FREEZE_USER("冻结用户", 80),
     CANCEL_FREEZE_USER("取消冻结用户", 81),
     DELETE_SERVICE("删除服务", 90),
-    CREATE_SERVICE("创建服务",91);
+    CREATE_SERVICE("创建服务",91),
+    UPDATE_SERVICE("更新服务",92);
 
     private String message;
     private int code;

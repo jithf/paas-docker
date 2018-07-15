@@ -292,7 +292,7 @@ public class RepositoryImageServiceImpl extends ServiceImpl<RepositoryImageMappe
     @Async("taskExecutor")
     @Transactional(rollbackFor = CustomException.class)
     @Override
-    public void pullTask(RepositoryImage repositoryImage, String userId, HttpServletRequest request) {
+    public String pullTask(RepositoryImage repositoryImage, String userId, HttpServletRequest request) {
         try {
             // 1、拉取镜像
             dockerClient.pull(repositoryImage.getFullName());
@@ -303,6 +303,7 @@ public class RepositoryImageServiceImpl extends ServiceImpl<RepositoryImageMappe
             sysLogService.saveLog(request, SysLogTypeEnum.PULL_IMAGE_FROM_HUB);
 
             sendMQ(userId, repositoryImage.getId(), ResultVOUtils.success());
+            return sysImage.getId();
         } catch (Exception e) {
             log.error("拉取镜像失败，错误位置：{}，错误栈：{}",
                     "RepositoryImageServiceImpl.pullTask()", HttpClientUtils.getStackTraceAsString(e));
@@ -310,6 +311,7 @@ public class RepositoryImageServiceImpl extends ServiceImpl<RepositoryImageMappe
             sysLogService.saveLog(request, SysLogTypeEnum.PULL_IMAGE_FROM_HUB,e);
 
             sendMQ(userId, repositoryImage.getId(), ResultVOUtils.error(ResultEnum.PULL_ERROR));
+            return null;
         }
     }
 
