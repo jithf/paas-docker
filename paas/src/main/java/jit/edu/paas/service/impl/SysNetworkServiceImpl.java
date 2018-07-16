@@ -8,12 +8,15 @@ import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.Network;
 import com.spotify.docker.client.messages.NetworkConfig;
 import jit.edu.paas.commons.util.*;
+import jit.edu.paas.domain.entity.ContainerNetwork;
+import jit.edu.paas.domain.entity.SysLogin;
 import jit.edu.paas.domain.entity.SysNetwork;
 import jit.edu.paas.domain.enums.ResultEnum;
 import jit.edu.paas.domain.enums.RoleEnum;
 import jit.edu.paas.domain.enums.SysLogTypeEnum;
 import jit.edu.paas.domain.vo.ResultVO;
 import jit.edu.paas.exception.CustomException;
+import jit.edu.paas.mapper.ContainerNetworkMapper;
 import jit.edu.paas.mapper.SysNetworkMapper;
 import jit.edu.paas.mapper.UserContainerMapper;
 import jit.edu.paas.mapper.UserServiceMapper;
@@ -46,6 +49,8 @@ public class SysNetworkServiceImpl extends ServiceImpl<SysNetworkMapper, SysNetw
     private SysNetworkMapper networkMapper;
     @Autowired
     private UserContainerMapper containerMapper;
+    @Autowired
+    private ContainerNetworkMapper containerNetworkMapper;
     @Autowired
     private SysLoginService loginService;
     @Autowired
@@ -236,12 +241,13 @@ public class SysNetworkServiceImpl extends ServiceImpl<SysNetworkMapper, SysNetw
         }
         // 检查网络是否存在
         try {
-            if(networkMapper.selectById(networkId) == null || dockerClient.inspectNetwork(networkId) == null) {
+            if(dockerClient.inspectNetwork(networkId) == null || networkMapper.selectById(networkId) == null) {
                 sync();
                 return ResultVOUtils.error(ResultEnum.NETWORK_NOT_EXIST);
             }
 
             dockerClient.connectToNetwork(containerId, networkId);
+            containerNetworkMapper.insert(new ContainerNetwork(containerId,networkId));
             return ResultVOUtils.success();
         } catch (Exception e) {
             log.error("连接网络出错错误，错误位置：{}，错误栈：{}",
@@ -265,7 +271,7 @@ public class SysNetworkServiceImpl extends ServiceImpl<SysNetworkMapper, SysNetw
 
         try {
             dockerClient.disconnectFromNetwork(containerId, networkId);
-
+            containerNetworkMapper.delete(new EntityWrapper<ContainerNetwork>().eq("containerId",containerId).and().eq("networkId",networkId));
             return ResultVOUtils.success();
         } catch (Exception e) {
             log.error("取消连接网络出错错误，错误位置：{}，错误栈：{}",
@@ -305,8 +311,8 @@ public class SysNetworkServiceImpl extends ServiceImpl<SysNetworkMapper, SysNetw
         }
         // TODO 判断是否有活跃容器
         try {
-            if(dockerClient.inspectNetwork(networkId).containers() != null) {
-                throw new Exception("网络内有活跃容器");
+            if(containerNetworkMapper.selectList(new EntityWrapper<ContainerNetwork>().eq("networkId",networkId)) != null) {
+                throw new Exception("网络内有容器,请先清空网络内容器");
             }
 
             dockerClient.removeNetwork(networkId);

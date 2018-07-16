@@ -69,7 +69,7 @@ public enum ResultEnum {
     PUBLIC_NETWORK_CREATE_ERROR("公共网络创建失败",83),
     USER_NETWORK_CREATE_ERROR("用户网络创建失败",84),
     NETWORK_NOT_EXIST("网络不存在",85),
-    DELETE_NETWORK_ERROR("删除网络错误",86),
+    DELETE_NETWORK_ERROR("删除网络错误,请先清空网络内容器",86),
     CONNECT_NETWORK_ERROR("连接网络错误",87),
     DIS_CONNECT_NETWORK_ERROR("取消连接网络错误",88),
     NETWORK_CONNECT_REFUSED("网络连接拒绝，没有权限",89),
