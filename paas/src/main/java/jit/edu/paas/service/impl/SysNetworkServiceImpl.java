@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.plugins.Page;
 import com.baomidou.mybatisplus.service.impl.ServiceImpl;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.Network;
 import com.spotify.docker.client.messages.NetworkConfig;
 import jit.edu.paas.commons.util.*;
@@ -233,10 +234,14 @@ public class SysNetworkServiceImpl extends ServiceImpl<SysNetworkMapper, SysNetw
         if(!containerMapper.hasBelongSb(containerId, userId)) {
             return ResultVOUtils.error(ResultEnum.NETWORK_CONNECT_REFUSED);
         }
-
+        // 检查网络是否存在
         try {
-            dockerClient.connectToNetwork(containerId, networkId);
+            if(networkMapper.selectById(networkId) == null || dockerClient.inspectNetwork(networkId) == null) {
+                sync();
+                return ResultVOUtils.error(ResultEnum.NETWORK_NOT_EXIST);
+            }
 
+            dockerClient.connectToNetwork(containerId, networkId);
             return ResultVOUtils.success();
         } catch (Exception e) {
             log.error("连接网络出错错误，错误位置：{}，错误栈：{}",
@@ -299,8 +304,11 @@ public class SysNetworkServiceImpl extends ServiceImpl<SysNetworkMapper, SysNetw
             return resultVO;
         }
         // TODO 判断是否有活跃容器
-
         try {
+            if(dockerClient.inspectNetwork(networkId).containers() != null) {
+                throw new Exception("网络内有活跃容器");
+            }
+
             dockerClient.removeNetwork(networkId);
             networkMapper.deleteById(networkId);
 

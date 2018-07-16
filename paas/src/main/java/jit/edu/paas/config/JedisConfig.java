@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.Protocol;
 
 /**
@@ -33,7 +34,9 @@ public class JedisConfig {
 
     @Bean
     public JedisPool jedisPool() {
-        return new JedisPool(new GenericObjectPoolConfig(), STANDALONE_HOST, STANDALONE_PORT,
-                Protocol.DEFAULT_TIMEOUT, STANDALONE_PASSWORD, Protocol.DEFAULT_DATABASE, null);
+        JedisPoolConfig config = new JedisPoolConfig();
+        config.setMaxTotal(30); //最大连接数
+        config.setMaxIdle(10); //最大空闲数
+        return new JedisPool(config, STANDALONE_HOST, STANDALONE_PORT);
     }
 }
