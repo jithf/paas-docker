@@ -3,18 +3,21 @@ package jit.edu.paas.controller;
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.plugins.Page;
 import jit.edu.paas.commons.convert.UserContainerDTOConvert;
+import jit.edu.paas.commons.util.CollectionUtils;
+import jit.edu.paas.commons.util.JsonUtils;
 import jit.edu.paas.commons.util.ResultVOUtils;
 import jit.edu.paas.commons.util.StringUtils;
 import jit.edu.paas.domain.dto.UserContainerDTO;
-import jit.edu.paas.domain.entity.RepositoryImage;
-import jit.edu.paas.domain.entity.SysImage;
 import jit.edu.paas.domain.entity.UserContainer;
 import jit.edu.paas.domain.enums.ContainerOpEnum;
 import jit.edu.paas.domain.enums.ContainerStatusEnum;
 import jit.edu.paas.domain.enums.ResultEnum;
 import jit.edu.paas.domain.enums.RoleEnum;
 import jit.edu.paas.domain.vo.ResultVO;
-import jit.edu.paas.service.*;
+import jit.edu.paas.service.SysLoginService;
+import jit.edu.paas.service.UserContainerService;
+import jit.edu.paas.service.UserProjectService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,6 +32,7 @@ import java.util.Map;
  * @author jitwxs
  * @since 2018/6/28 14:27
  */
+@Slf4j
 @RestController
 @RequestMapping("/container")
 public class ContainerController {
@@ -38,10 +42,6 @@ public class ContainerController {
     private SysLoginService loginService;
     @Autowired
     private UserProjectService projectService;
-    @Autowired
-    private SysImageService sysImageService;
-    @Autowired
-    private RepositoryImageService repositoryImageService;
 
     @Value("${docker.server.address}")
     private String dockerAddress;
@@ -147,53 +147,40 @@ public class ContainerController {
      * @param imageId 镜像ID 必填
      * @param containerName 容器名 必填
      * @param projectId 所属项目 必填
-     * @param portMap 端口映射
-     * @param cmd 执行命令，如若为空，使用默认的命令
-     * @param env 环境变量
-     * @destination 容器内部目录
+     * @param portMapStr 端口映射，Map<String,String> JSON字符串
+     * @param cmdStr 执行命令，如若为空，使用默认的命令，多个分号连接
+     * @param envStr 环境变量，多个分号连接
+     * @param destinationStr  容器内部目录，多个分号连接
      * @author jitwxs
      * @since 2018/7/1 15:52
      */
     @PostMapping("/create")
     @PreAuthorize("hasRole('ROLE_USER')")
-    public ResultVO createContainer(Integer type,String imageId, String imageName,String containerName, String projectId,
-                                    Map<String,String> portMap, String[] cmd, String[] env, String[] destination,
-                                    @RequestAttribute String uid, HttpServletRequest request){
+    public ResultVO createContainer(String imageId, String containerName, String projectId,
+                                    String portMapStr, String cmdStr, String envStr, String destinationStr,
+                                    @RequestAttribute String uid, HttpServletRequest request) {
         // 输入验证
-        if(StringUtils.isBlank(containerName,projectId) || type == null) {
+        if(StringUtils.isBlank(imageId,containerName,projectId)) {
             return ResultVOUtils.error(ResultEnum.PARAM_ERROR);
         }
 
-        //type: 0表示本地镜像 1表示Docker Hub镜像 2表示Hub镜像
-        if(type == 1 && StringUtils.isNotBlank(imageName)) {
-            String res=sysImageService.pullImageTask(imageName,uid,request);
-            if(res == null) {
-                return ResultVOUtils.error(ResultEnum.DOCKER_EXCEPTION);
-            }
-            imageId = res;
-        } else if(type == 2 && StringUtils.isNotBlank(imageId)) {
-            // 校验
-            ResultVO resultVO = repositoryImageService.pullCheck(imageId);
-            if(ResultEnum.OK.getCode() != resultVO.getCode() && resultVO.getCode() != 45) {
-                return resultVO;
-            }
-            // 判断本地是否存在 若存在 则继续执行创建容器步骤 否则 从Hub上拉取
-            SysImage s = sysImageService.getByFullName(repositoryImageService.getById(imageId).getFullName());
-            if(s!= null) {
-                imageId = s.getId();
-            } else {
-                RepositoryImage repositoryImage = (RepositoryImage) resultVO.getData();
-                String ult = repositoryImageService.pullTask(repositoryImage, uid, request);
-                if (ult == null) {
-                    return ResultVOUtils.error(ResultEnum.PULL_ERROR);
-                }
-                imageId = ult;
+        // 前端传递map字符串
+        Map<String, String> portMap = new HashMap<>(16);
+        if(StringUtils.isNotBlank(portMapStr)) {
+            try {
+                portMap = JsonUtils.jsonToMap(portMapStr);
+                // 解决前台发送空map问题
+                CollectionUtils.removeNullEntry(portMap);
+            } catch (Exception e) {
+                log.error("Json格式解析错误，错误位置：{}，错误信息：{}", "ContainerController.createContainer()", e.getMessage());
+                return ResultVOUtils.error(ResultEnum.JSON_ERROR);
             }
         }
 
-        if(StringUtils.isBlank(imageId)) {
-            return ResultVOUtils.error(ResultEnum.PARAM_ERROR);
-        }
+        // 前台字符串转换
+        String[] cmd = CollectionUtils.str2Array(cmdStr, ";"),
+                env = CollectionUtils.str2Array(envStr, ";"),
+                destination = CollectionUtils.str2Array(destinationStr, ";");
 
         // 创建校验
         ResultVO resultVO = containerService.createContainerCheck(uid, imageId, portMap, projectId);
