@@ -157,7 +157,7 @@ public class ContainerController {
     @PostMapping("/create")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResultVO createContainer(String imageId, String containerName, String projectId,
-                                    String portMapStr, String cmdStr, String envStr, String destinationStr,
+                                    String portMapStr, String cmdStr, String envStr, String destinationStr,String networkId,
                                     @RequestAttribute String uid, HttpServletRequest request) {
         // 输入验证
         if(StringUtils.isBlank(imageId,containerName,projectId)) {
@@ -183,7 +183,7 @@ public class ContainerController {
                 destination = CollectionUtils.str2Array(destinationStr, ";");
 
         // 创建校验
-        ResultVO resultVO = containerService.createContainerCheck(uid, imageId, portMap, projectId);
+        ResultVO resultVO = containerService.createContainerCheck(uid, imageId, portMap, projectId,networkId);
         if(ResultEnum.OK.getCode() != resultVO.getCode()) {
             return resultVO;
         } else {

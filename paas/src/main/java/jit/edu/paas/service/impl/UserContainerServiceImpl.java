@@ -6,24 +6,21 @@ import com.baomidou.mybatisplus.service.impl.ServiceImpl;
 import com.google.common.collect.ImmutableList;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.ContainerNotFoundException;
+import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.exceptions.DockerTimeoutException;
 import com.spotify.docker.client.messages.*;
+import com.spotify.docker.client.messages.swarm.EndpointSpec;
 import jit.edu.paas.commons.activemq.MQProducer;
 import jit.edu.paas.commons.activemq.Task;
 import jit.edu.paas.commons.convert.UserContainerDTOConvert;
 import jit.edu.paas.commons.util.*;
 import jit.edu.paas.commons.util.jedis.JedisClient;
 import jit.edu.paas.domain.dto.UserContainerDTO;
-import jit.edu.paas.domain.entity.SysImage;
-import jit.edu.paas.domain.entity.SysVolume;
-import jit.edu.paas.domain.entity.UserContainer;
-import jit.edu.paas.domain.entity.UserProject;
+import jit.edu.paas.domain.entity.*;
 import jit.edu.paas.domain.enums.*;
 import jit.edu.paas.domain.vo.ResultVO;
 import jit.edu.paas.exception.CustomException;
-import jit.edu.paas.mapper.SysVolumesMapper;
-import jit.edu.paas.mapper.UserContainerMapper;
-import jit.edu.paas.mapper.UserProjectMapper;
+import jit.edu.paas.mapper.*;
 import jit.edu.paas.service.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.activemq.command.ActiveMQQueue;
@@ -60,6 +57,8 @@ public class UserContainerServiceImpl extends ServiceImpl<UserContainerMapper, U
     private SysLogService sysLogService;
     @Autowired
     private ProjectLogService projectLogService;
+    @Autowired
+    private SysNetworkService sysNetworkService;
 
     @Autowired
     private SysVolumesMapper sysVolumesMapper;
@@ -67,6 +66,10 @@ public class UserContainerServiceImpl extends ServiceImpl<UserContainerMapper, U
     private UserProjectMapper projectMapper;
     @Autowired
     private UserContainerMapper userContainerMapper;
+    @Autowired
+    private SysNetworkMapper networkMapper;
+    @Autowired
+    private ContainerNetworkMapper containerNetworkMapper;
 
     @Autowired
     private MQProducer mqProducer;
@@ -153,7 +156,7 @@ public class UserContainerServiceImpl extends ServiceImpl<UserContainerMapper, U
 
     @Override
     public ResultVO createContainerCheck(String userId, String imageId,
-                                         Map<String, String> portMap, String projectId) {
+                                         Map<String, String> portMap, String projectId, String networkId) {
         // 1、Project鉴权
         Boolean b = projectMapper.hasBelong(projectId, userId);
         if(!b) {
@@ -179,7 +182,19 @@ public class UserContainerServiceImpl extends ServiceImpl<UserContainerMapper, U
         if(!checkPorts(exportPorts, portMap)) {
             return ResultVOUtils.error(ResultEnum.INPUT_PORT_ERROR);
         }
-
+        // 校验网络
+        if(StringUtils.isNotBlank(networkId)) {
+            try {
+                if (dockerClient.inspectNetwork(networkId) == null || networkMapper.selectById(networkId) == null) {
+                    sysNetworkService.sync();
+                    return ResultVOUtils.error(ResultEnum.NETWORK_NOT_EXIST);
+                }
+            } catch (Exception e) {
+                log.error("创建容器出现异常，异常位置：{}，错误栈：{}",
+                        "UserContainerServiceImpl.createContainerCheck()", HttpClientUtils.getStackTraceAsString(e));
+                return ResultVOUtils.error(ResultEnum.DOCKER_EXCEPTION);
+            }
+        }
         return ResultVOUtils.success();
     }
 
@@ -370,6 +385,10 @@ public class UserContainerServiceImpl extends ServiceImpl<UserContainerMapper, U
             // 删除数据
             String name = getName(containerId);
             userContainerMapper.deleteById(containerId);
+            //删除网络连接数据
+            if (containerNetworkMapper.selectList(new EntityWrapper<ContainerNetwork>().eq("containerId", containerId)) != null) {
+                containerNetworkMapper.delete(new EntityWrapper<ContainerNetwork>().eq("containerId", containerId));
+            }
             // 清理缓存
             cleanCache(containerId);
             // 写入日志

@@ -50,7 +50,7 @@ public interface UserContainerService extends IService<UserContainer> {
      * @author jitwxs
      * @since 2018/7/10 20:11
      */
-    ResultVO createContainerCheck(String userId, String imageId,Map<String, String> portMap, String projectId);
+    ResultVO createContainerCheck(String userId, String imageId,Map<String, String> portMap, String projectId,String networkId);
 
     /**
      * 创建容器任务

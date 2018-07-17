@@ -16,12 +16,14 @@ import jit.edu.paas.commons.activemq.Task;
 import jit.edu.paas.commons.convert.UserServiceDTOConvert;
 import jit.edu.paas.commons.util.*;
 import jit.edu.paas.domain.dto.UserServiceDTO;
+import jit.edu.paas.domain.entity.ContainerNetwork;
 import jit.edu.paas.domain.entity.SysImage;
 import jit.edu.paas.domain.entity.SysVolume;
 import jit.edu.paas.domain.entity.UserService;
 import jit.edu.paas.domain.enums.*;
 import jit.edu.paas.domain.vo.ResultVO;
 import jit.edu.paas.exception.CustomException;
+import jit.edu.paas.mapper.ContainerNetworkMapper;
 import jit.edu.paas.mapper.SysVolumesMapper;
 import jit.edu.paas.mapper.UserProjectMapper;
 import jit.edu.paas.mapper.UserServiceMapper;
@@ -58,6 +60,8 @@ public class UserServiceServiceImpl extends ServiceImpl<UserServiceMapper, UserS
     private UserServiceMapper userServiceMapper;
     @Autowired
     private UserProjectMapper projectMapper;
+    @Autowired
+    private ContainerNetworkMapper containerNetworkMapper;
     @Autowired
     private SysLoginService loginService;
     @Autowired
@@ -148,6 +152,11 @@ public class UserServiceServiceImpl extends ServiceImpl<UserServiceMapper, UserS
             dockerSwarmClient.removeService(serviceId);
             // 删除数据
             userServiceMapper.deleteById(serviceId);
+            //删除网络连接数据
+            List<ContainerNetwork> list = containerNetworkMapper.selectList(new EntityWrapper<ContainerNetwork>().eq("serviceId", serviceId));
+            if (list != null) {
+                containerNetworkMapper.delete(new EntityWrapper<ContainerNetwork>().eq("serviceId", serviceId));
+            }
             // 写入日志
             sysLogService.saveLog(request, SysLogTypeEnum.DELETE_SERVICE);
 
@@ -210,7 +219,7 @@ public class UserServiceServiceImpl extends ServiceImpl<UserServiceMapper, UserS
     @Override
     public void createServiceTask(String userId, String imageId, String[] cmd, Map<String,String> portMap, int replicas,
                                   String serviceName, String projectId, String[] env, String[] destination,
-                                  Map<String,String> labels, HttpServletRequest request) {
+                                  Map<String,String> labels, String networkId,HttpServletRequest request) {
         SysImage image = imageService.getById(imageId);
         UserService us = new UserService();
         ServiceSpec.Builder builder = ServiceSpec.builder();
@@ -289,6 +298,13 @@ public class UserServiceServiceImpl extends ServiceImpl<UserServiceMapper, UserS
             builder.endpointSpec(endpointSpec);
         }
 
+        //TODO 是否需要设置创建服务时同时连接多个网络？？？
+        //连接网络
+        if(StringUtils.isNotBlank(networkId)) {
+            NetworkAttachmentConfig.Builder networkBuilder = NetworkAttachmentConfig.builder();
+            networkBuilder.target(networkId);
+            builder.networks(networkBuilder.build());
+        }
         // 2、创建服务
         try {
             ServiceCreateResponse creation = dockerSwarmClient.createService(builder.build());
@@ -299,6 +315,9 @@ public class UserServiceServiceImpl extends ServiceImpl<UserServiceMapper, UserS
             us.setProjectId(projectId);
             us.setImage(image.getFullName());
             us.setReplicas(replicas);
+            if(StringUtils.isNotBlank(networkId)) {
+                containerNetworkMapper.insert(new ContainerNetwork(creation.id(),networkId));
+            }
 
             // 为数据库中的sysvolumes插入
             if(CollectionUtils.isNotArrayEmpty(destination)) {

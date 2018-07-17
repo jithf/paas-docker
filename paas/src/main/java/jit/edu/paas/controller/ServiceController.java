@@ -208,7 +208,7 @@ public class ServiceController {
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResultVO createService(String imageId, String serviceName, String projectId,
                                   String portMapStr, String cmdStr, String envStr, String destinationStr,
-                                  @RequestParam(defaultValue = "1") int replicas, String labelsStr,
+                                  @RequestParam(defaultValue = "1") int replicas, String labelsStr, String networkId,
                                   @RequestAttribute String uid, HttpServletRequest request){
         // 输入验证
         if (StringUtils.isBlank(imageId, serviceName, projectId)) {
@@ -242,14 +242,14 @@ public class ServiceController {
                 destination = CollectionUtils.str2Array(destinationStr, ";");
 
         // 创建校验
-        ResultVO resultVO = containerService.createContainerCheck(uid, imageId, portMap, projectId);
+        ResultVO resultVO = containerService.createContainerCheck(uid, imageId, portMap, projectId,networkId);
         if (ResultEnum.OK.getCode() != resultVO.getCode()) {
             return resultVO;
         }
 
         // 创建服务
         userServiceService.createServiceTask(uid, imageId, cmd, portMap, replicas, serviceName, projectId,
-                env, destination, labels, request);
+                env, destination, labels, networkId, request);
         return ResultVOUtils.success("开始创建服务");
     }
 }

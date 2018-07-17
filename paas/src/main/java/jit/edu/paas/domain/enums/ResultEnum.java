@@ -76,7 +76,7 @@ public enum ResultEnum {
     DIS_CONNECT_NETWORK_ERROR("取消连接网络错误",89),
     NETWORK_CONNECT_REFUSED("网络连接拒绝，没有权限",90),
     NETWORK_DIS_CONNECT_REFUSED("网络取消连接拒绝，没有权限",91),
-    DELETE_NETWORK_ERROR_BY_USED("删除网络错误,请先清空网络内容器",92),
+    DELETE_NETWORK_ERROR_BY_USED("删除网络错误,请先清空网络内容器或服务",92),
     SERVICE_NOT_FOUND("服务不存在",100),
     SERVICE_INSPECT_ERROR("服务查询失败",101),
     SERVICE_NAME_ILLEGAL("服务名不合法，只能为字母或数字",102),

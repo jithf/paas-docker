@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.plugins.Page;
 import com.baomidou.mybatisplus.service.IService;
 import com.spotify.docker.client.LogStream;
 import com.spotify.docker.client.messages.swarm.Service;
+import jit.edu.paas.commons.util.StringUtils;
 import jit.edu.paas.domain.dto.UserServiceDTO;
 import jit.edu.paas.domain.entity.UserService;
 import jit.edu.paas.domain.vo.ResultVO;
@@ -64,7 +65,7 @@ public interface UserServiceService extends IService<UserService> {
      */
     void createServiceTask(String userId, String imageId, String[] cmd, Map<String,String> portMap, int replicas,
                            String serviceName, String projectId, String[] env, String[] destination,
-                           Map<String,String> labels, HttpServletRequest request);
+                           Map<String,String> labels,String networkId, HttpServletRequest request);
 
     /**
      * 删除服务任务
